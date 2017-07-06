@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 //const node string = "[fe80::e046:9aff:fe4e:912e%wlp1s0]:33123"
@@ -41,12 +42,16 @@ func testConnection() {
 }
 
 func main() {
-<<<<<<< HEAD
+	var wg sync.WaitGroup
+	wg.Add(3)
+
 	updates := make(chan interface{}, chanelSize)
+	log.Println("test1")
 	go testConnection()
+	log.Println("test2")
 	go wsManager(updates)
-=======
+	log.Println("test3")
 	go testConnection()
 
->>>>>>> 29ff9db3b1420847bc9d7f25eb57c7ce1faa60a9
+	wg.Wait()
 }
