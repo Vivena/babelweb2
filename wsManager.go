@@ -40,7 +40,7 @@ func test(updates chan interface{}) {
 /*-----------------------------------------------------------------*/
 
 //MCUpdates multicast updates sent by the routine comminicating with the routers
-func MCUpdates(updates chan string, g *Listenergroupe) { //TODO changer string par le bon type
+func MCUpdates(updates chan interface{}, g *Listenergroupe) { //TODO changer string par le bon type
 	for {
 		update, quit := <-updates
 		if quit == false {
@@ -82,6 +82,8 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "%s", content)
 }
+
+//RootHandcss load the CSS file when someone connect to the root of the server
 func RootHandcss(w http.ResponseWriter, r *http.Request) {
 	content, err := ioutil.ReadFile(cssPage)
 	if err != nil {
@@ -89,6 +91,8 @@ func RootHandcss(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "%s", content)
 }
+
+//RootHandinitialize load js file when someone connect to the root of the server
 func RootHandinitialize(w http.ResponseWriter, r *http.Request) {
 	content, err := ioutil.ReadFile(jsPage)
 	if err != nil {
@@ -114,6 +118,8 @@ func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routein
 			return
 		}
 		//TODO parcourt la base de donné et envois tout au client
+
+		log.Println("New connection to a websocket")
 		updates := NewListener()
 		l.Push(updates)
 		defer l.Quit(updates)
@@ -135,6 +141,7 @@ func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routein
 				}
 
 			case clientMessage := <-mess: //we got a message from the client
+				log.Println(clientMessage)
 				HandleMessage(clientMessage)
 
 			}
@@ -150,7 +157,7 @@ func wsManager(updates chan interface{}) {
 	log.Println("test")
 	go test(updates)
 	bcastGrp := NewListenerGroupe()
-
+	go MCUpdates(updates, bcastGrp)
 	ws := WsHandler(bcastGrp)
 	http.HandleFunc("/", RootHandler)
 	http.HandleFunc("/style.css", RootHandcss)
