@@ -41,6 +41,6 @@ func testConnection() {
 }
 
 func main() {
-	testConnection()
+	go testConnection()
 
 }
