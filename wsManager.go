@@ -59,6 +59,7 @@ func MCUpdates(updates chan interface{}, g *Listenergroupe) { //TODO changer str
 func GetMess(conn *websocket.Conn, mess chan []byte) {
 	_, message, err := conn.ReadMessage()
 	if err != nil {
+		close(mess)
 		log.Println(err)
 		return
 	}
@@ -140,8 +141,13 @@ func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routein
 					return
 				}
 
-			case clientMessage := <-mess: //we got a message from the client
+			case clientMessage, q := <-mess: //we got a message from the client
+				if q == false {
+					return
+				}
+
 				log.Println(clientMessage)
+
 				HandleMessage(clientMessage)
 
 			}
