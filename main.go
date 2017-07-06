@@ -41,6 +41,12 @@ func testConnection() {
 }
 
 func main() {
+<<<<<<< HEAD
+	updates := make(chan interface{}, chanelSize)
+	go testConnection()
+	go wsManager(updates)
+=======
 	go testConnection()
 
+>>>>>>> 29ff9db3b1420847bc9d7f25eb57c7ce1faa60a9
 }
