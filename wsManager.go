@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -12,9 +10,15 @@ import (
 
 const port string = ":8080"
 const htmlPage = "static/index.html"
-const jsPage = "static/js/initialize.js"
+
+/*const jsPage = "static/js/initialize.js"
 const cssPage = "static/css/style.css"
-const d3 = "static/js/d3/d3.js"
+const d3 = "static/js/d3/d3.js"*/
+
+const root = "static/"
+const jsPage = "static/js/"
+const cssPage = "static/css/"
+const d3 = "static/js/"
 
 const (
 	delete = iota
@@ -75,40 +79,6 @@ func HandleMessage(mess []byte) {
 
 /*-----------------------------------------------------------------*/
 
-//RootHandler load the html file when someone connect to the root of the server
-func RootHandler(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile(htmlPage)
-	if err != nil {
-		log.Println("Could not open file.", err)
-	}
-	fmt.Fprintf(w, "%s", content)
-}
-
-//RootHandcss load the CSS file when someone connect to the root of the server
-func RootHandcss(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile(cssPage)
-	if err != nil {
-		log.Println("Could not open file.", err)
-	}
-	fmt.Fprintf(w, "%s", content)
-}
-
-//RootHandinitialize load js file when someone connect to the root of the server
-func RootHandinitialize(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile(jsPage)
-	if err != nil {
-		log.Println("Could not open file.", err)
-	}
-	fmt.Fprintf(w, "%s", content)
-}
-func d3Handler(w http.ResponseWriter, r *http.Request) {
-	content, err := ioutil.ReadFile(d3)
-	if err != nil {
-		log.Println("Could not open file.", err)
-	}
-	fmt.Fprintf(w, "%s", content)
-}
-
 //WsHandler manage the websockets
 func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routeinfo
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -165,13 +135,12 @@ func wsManager(updates chan interface{}) {
 	bcastGrp := NewListenerGroupe()
 	go MCUpdates(updates, bcastGrp)
 	ws := WsHandler(bcastGrp)
-	http.HandleFunc("/", RootHandler)
-	http.HandleFunc("/style.css", RootHandcss)
-	http.HandleFunc("/initialize.js", RootHandinitialize)
-	http.HandleFunc("/d3/d3.js", d3Handler)
 
+	http.Handle("/", http.FileServer(http.Dir(root)))
+	http.Handle("/style.css", http.FileServer(http.Dir(cssPage)))
+	http.Handle("/initialize.js", http.FileServer(http.Dir(jsPage)))
+	http.Handle("/d3/d3.js", http.FileServer(http.Dir(d3)))
 	http.Handle("/ws", ws)
-
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		return

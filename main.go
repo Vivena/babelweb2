@@ -43,15 +43,12 @@ func testConnection() {
 
 func main() {
 	var wg sync.WaitGroup
-	wg.Add(3)
-
+	wg.Add(2)
 	updates := make(chan interface{}, chanelSize)
 	log.Println("test1")
 	go testConnection()
 	log.Println("test2")
 	go wsManager(updates)
-	log.Println("test3")
-	go testConnection()
 
 	wg.Wait()
 }
