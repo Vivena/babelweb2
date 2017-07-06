@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 )
 
@@ -13,30 +14,33 @@ import (
 //const node string = "[fe80::1e8f:814e:9731:dec6%enp2s0]:33123"
 
 const node string = "[::1]:33123"
+const (
+	dump = "dump\n"
+)
 
-func main() {
-
-	text := "dump\n"
+func testConnection() {
 	conn, err := net.Dial("tcp6", node)
 	if err != nil {
-		fmt.Println("node")
-		fmt.Println(err)
-
+		log.Println("node ", err)
 		return
 	}
-
 	defer conn.Close()
-	fmt.Fprintf(conn, text)
+
+	fmt.Fprintf(conn, dump)
 	for {
 		message, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
-			fmt.Println("no")
+			log.Println("no")
 			break
 		}
-		fmt.Println(message)
+		log.Println(message)
 		if message == "ok" || message == "bad" || message == "no" {
 			break
 		}
 	}
+}
+
+func main() {
+	testConnection()
 
 }
