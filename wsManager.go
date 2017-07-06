@@ -11,7 +11,11 @@ import (
 )
 
 const port string = ":8080"
-const htmlPage string = "test.html"
+const htmlPage = "static/index.html"
+const jsPage = "static/js/initialize.js"
+const cssPage = "static/css/style.css"
+const d3 = "static/js/d3/d3.js"
+
 const (
 	delete = iota
 	update = iota
@@ -78,6 +82,27 @@ func RootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprintf(w, "%s", content)
 }
+func RootHandcss(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile(cssPage)
+	if err != nil {
+		log.Println("Could not open file.", err)
+	}
+	fmt.Fprintf(w, "%s", content)
+}
+func RootHandinitialize(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile(jsPage)
+	if err != nil {
+		log.Println("Could not open file.", err)
+	}
+	fmt.Fprintf(w, "%s", content)
+}
+func d3Handler(w http.ResponseWriter, r *http.Request) {
+	content, err := ioutil.ReadFile(d3)
+	if err != nil {
+		log.Println("Could not open file.", err)
+	}
+	fmt.Fprintf(w, "%s", content)
+}
 
 //WsHandler manage the websockets
 func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routeinfo
@@ -128,6 +153,10 @@ func wsManager(updates chan interface{}) {
 
 	ws := WsHandler(bcastGrp)
 	http.HandleFunc("/", RootHandler)
+	http.HandleFunc("/style.css", RootHandcss)
+	http.HandleFunc("/initialize.js", RootHandinitialize)
+	http.HandleFunc("/d3/d3.js", d3Handler)
+
 	http.Handle("/ws", ws)
 
 	err := http.ListenAndServe(":8080", nil)
