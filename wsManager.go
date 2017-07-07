@@ -1,6 +1,7 @@
 package main
 
 import (
+	"babelweb2/parser"
 	"log"
 	"net/http"
 	"time"
@@ -32,6 +33,14 @@ var upgrader = websocket.Upgrader{
 
 /*-----------------------------------------------------------------*/
 
+//WSMessage messages to send to the client via websocket
+type WSMessage struct {
+	typeUpdate string
+	update     parser.Entry
+}
+
+/*-----------------------------------------------------------------*/
+
 func test(updates chan interface{}) {
 	for {
 		time.Sleep(1000000000)
@@ -43,8 +52,14 @@ func test(updates chan interface{}) {
 
 /*-----------------------------------------------------------------*/
 
+func getEntries() {
+
+}
+
+/*-----------------------------------------------------------------*/
+
 //MCUpdates multicast updates sent by the routine comminicating with the routers
-func MCUpdates(updates chan interface{}, g *Listenergroupe) { //TODO changer string par le bon type
+func MCUpdates(updates chan interface{}, g *Listenergroupe) {
 	for {
 		update, quit := <-updates
 		if quit == false {
