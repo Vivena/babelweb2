@@ -14,7 +14,7 @@ type sReader struct {
 	index int
 }
 
-func (b *sReader)nextLine(reader *bufio.Reader) error {
+func (b *sReader) nextLine(reader *bufio.Reader) error {
 	w, err := reader.ReadBytes('\n')
 	if err != nil && err != io.EOF {
 		return err
@@ -24,11 +24,11 @@ func (b *sReader)nextLine(reader *bufio.Reader) error {
 	return err
 }
 
-func (b *sReader)nextWord() (string, error) {
+func (b *sReader) nextWord() (string, error) {
 	if b.index == len(b.ligne) {
 		return "", io.EOF
 	}
-	defer func (){
+	defer func() {
 		b.index++
 	}()
 	return b.ligne[b.index], nil
@@ -39,13 +39,13 @@ type Id string
 type EntryParser func(*sReader) (interface{}, error)
 
 type EntryValue struct {
-	data interface{}
+	data   interface{}
 	parser EntryParser
 }
 
 type Entry map[Id](*EntryValue)
 
-func (e Entry)String() string {
+func (e Entry) String() string {
 	var s string
 	for id, ev := range e {
 		s += (fmt.Sprintf("\t%s: ", id) +
@@ -61,7 +61,7 @@ const (
 	FieldAbsence  EntryError = 1
 )
 
-func (e EntryError)Error() string {
+func (e EntryError) Error() string {
 	if e == FieldPresence {
 		return "Field Already Exists"
 	} else if e == FieldAbsence {
@@ -74,7 +74,7 @@ func NewEntry() Entry {
 	return make(map[Id](*EntryValue))
 }
 
-func (e *Entry)AddField(id Id, parser EntryParser) error {
+func (e *Entry) AddField(id Id, parser EntryParser) error {
 	_, exists := (*e)[id]
 	if exists {
 		return FieldPresence
@@ -85,7 +85,7 @@ func (e *Entry)AddField(id Id, parser EntryParser) error {
 	return nil
 }
 
-func (e *Entry)GetData(id Id) (interface{}, error) {
+func (e *Entry) GetData(id Id) (interface{}, error) {
 	value, exists := (*e)[id]
 	if !exists {
 		return nil, FieldAbsence
@@ -93,7 +93,7 @@ func (e *Entry)GetData(id Id) (interface{}, error) {
 	return value.data, nil
 }
 
-func (e *Entry)Parse(buf *sReader) error {
+func (e *Entry) Parse(buf *sReader) error {
 	for {
 		w, err := buf.nextWord()
 		if err != nil {
@@ -163,7 +163,7 @@ func NewXrouteEntry() Entry {
 
 type ParsErr int
 
-func (e ParsErr)Error() string {
+func (e ParsErr) Error() string {
 	return "Syntax Error"
 }
 
@@ -249,11 +249,11 @@ func ParsePrefix(buf *sReader) (interface{}, error) {
 type EntryMaker func() Entry
 
 type Table struct {
-	dict map[Id](Entry)
+	dict  map[Id](Entry)
 	maker EntryMaker
 }
 
-func (t Table)String() string {
+func (t Table) String() string {
 	var s string
 	for id, e := range t.dict {
 		s += (fmt.Sprintf("%s:\n", id) +
@@ -264,7 +264,7 @@ func (t Table)String() string {
 
 type BabelDesc map[Id](Table)
 
-func (bd BabelDesc)String() string {
+func (bd BabelDesc) String() string {
 	var s string
 	for id, t := range bd {
 		s += (fmt.Sprintf("*\t%s\n", id) +
@@ -282,7 +282,7 @@ func NewBabelDesc() BabelDesc {
 	return ts
 }
 
-func (t Table)Add(id Id, e Entry) error {
+func (t Table) Add(id Id, e Entry) error {
 	_, exists := t.dict[id]
 	if exists {
 		return FieldPresence
@@ -291,7 +291,7 @@ func (t Table)Add(id Id, e Entry) error {
 	return nil
 }
 
-func (t Table)Change(id Id, e Entry) error {
+func (t Table) Change(id Id, e Entry) error {
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -300,7 +300,7 @@ func (t Table)Change(id Id, e Entry) error {
 	return nil
 }
 
-func (t Table)Flush(id Id) error {
+func (t Table) Flush(id Id) error {
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -309,50 +309,66 @@ func (t Table)Flush(id Id) error {
 	return nil
 }
 
-func ParseAction(t *BabelDesc, buf *sReader) error {
+type WSMessage struct {
+	typeUpdate string
+	tableId string
+	entryId string
+	update Entry
+}
+
+func ParseAction(t *BabelDesc, buf *sReader) (WSMessage, error) {
+
+	var wsm WSMessage
+	
 	w, err := buf.nextWord()
 	if err != nil {
-		return err
+		return wsm, err
 	}
 	if w != "add" && w != "change" && w != "flush" {
-		return nil
+		if w == "ok" {
+			return wsm, io.EOF
+		}
+		return wsm, nil
 	}
 	table_id, err := buf.nextWord()
 	if err != nil {
-		return err
+		return wsm, err
 	}
 	entry_id, err := buf.nextWord()
 	if err != nil {
-		return err
+		return wsm, err
 	}
 	new_entry := (*t)[Id(table_id)].maker()
 	err = new_entry.Parse(buf)
 	if err != io.EOF {
-		return err
+		return wsm, err
 	}
+	
+	wsm = WSMessage{w, table_id, entry_id, new_entry}
+	
 	switch w {
 	case "add":
-		return (*t)[Id(table_id)].Add(Id(entry_id), new_entry)
+		return wsm, (*t)[Id(table_id)].Add(Id(entry_id), new_entry)
 	case "change":
-		return (*t)[Id(table_id)].Change(Id(entry_id), new_entry)
+		return wsm, (*t)[Id(table_id)].Change(Id(entry_id), new_entry)
 	case "flush":
-		return (*t)[Id(table_id)].Flush(Id(entry_id))
+		return wsm, (*t)[Id(table_id)].Flush(Id(entry_id))
 	}
-	return nil
+	return wsm, nil
 }
 
-func (t *BabelDesc)Fill(reader *bufio.Reader) error {
+func (t *BabelDesc) Fill(reader *bufio.Reader) error {
 	var buf sReader
 	for {
 		err := buf.nextLine(reader)
 		if err != nil && err != io.EOF {
 			return err
 		}
-		parserr := ParseAction(t, &buf)
-		if parserr != nil {
+		_, parserr := ParseAction(t, &buf)
+		if parserr != nil && parserr != io.EOF {
 			return parserr
 		}
-		if err == io.EOF {
+		if err == io.EOF || parserr == io.EOF {
 			break
 		}
 	}

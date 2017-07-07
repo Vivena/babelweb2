@@ -18,5 +18,11 @@ func TestParser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	fmt.Println("Fill\n", bd)
+	err = bd.Fill(br)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Println("Update\n", bd)
 	fmt.Println(bd)
 }
