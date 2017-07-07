@@ -2,18 +2,19 @@ package parser
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"net"
 	"strconv"
 	"strings"
 )
 
-type Buffer struct {
+type sReader struct {
 	ligne []string
 	index int
 }
 
-func (b *Buffer)nextLine(reader *bufio.Reader) error {
+func (b *sReader)nextLine(reader *bufio.Reader) error {
 	w, err := reader.ReadBytes('\n')
 	if err != nil && err != io.EOF {
 		return err
@@ -23,7 +24,7 @@ func (b *Buffer)nextLine(reader *bufio.Reader) error {
 	return err
 }
 
-func (b *Buffer)nextWord() (string, error) {
+func (b *sReader)nextWord() (string, error) {
 	if b.index == len(b.ligne) {
 		return "", io.EOF
 	}
@@ -35,7 +36,7 @@ func (b *Buffer)nextWord() (string, error) {
 
 type Id string
 
-type EntryParser func(*Buffer) (interface{}, error)
+type EntryParser func(*sReader) (interface{}, error)
 
 type EntryValue struct {
 	data interface{}
@@ -43,6 +44,15 @@ type EntryValue struct {
 }
 
 type Entry map[Id](*EntryValue)
+
+func (e Entry)String() string {
+	var s string
+	for id, ev := range e {
+		s += (fmt.Sprintf("\t%s: ", id) +
+			fmt.Sprintln(ev.data))
+	}
+	return s
+}
 
 type EntryError int
 
@@ -83,7 +93,7 @@ func (e *Entry)GetData(id Id) (interface{}, error) {
 	return value.data, nil
 }
 
-func (e *Entry)Parse(buf *Buffer) error {
+func (e *Entry)Parse(buf *sReader) error {
 	for {
 		w, err := buf.nextWord()
 		if err != nil {
@@ -160,12 +170,12 @@ func (e ParsErr)Error() string {
 const SyntaxError ParsErr = 0
 
 // string
-func ParseString(buf *Buffer) (interface{}, error) {
+func ParseString(buf *sReader) (interface{}, error) {
 	return buf.nextWord()
 }
 
 // bool
-func ParseBool(buf *Buffer) (interface{}, error) {
+func ParseBool(buf *sReader) (interface{}, error) {
 	w, err := buf.nextWord()
 	if err != nil {
 		return nil, err
@@ -182,7 +192,7 @@ func ParseBool(buf *Buffer) (interface{}, error) {
 
 // int64
 func GetIntParser(base int, bitSize int) EntryParser {
-	return func(buf *Buffer) (interface{}, error) {
+	return func(buf *sReader) (interface{}, error) {
 		w, err := buf.nextWord()
 		if err != nil {
 			return nil, err
@@ -197,7 +207,7 @@ func GetIntParser(base int, bitSize int) EntryParser {
 
 // uint64
 func GetUintParser(base int, bitSize int) EntryParser {
-	return func(buf *Buffer) (interface{}, error) {
+	return func(buf *sReader) (interface{}, error) {
 		w, err := buf.nextWord()
 		if err != nil {
 			return nil, err
@@ -211,7 +221,7 @@ func GetUintParser(base int, bitSize int) EntryParser {
 }
 
 // net.IP
-func ParseIp(buf *Buffer) (interface{}, error) {
+func ParseIp(buf *sReader) (interface{}, error) {
 	w, err := buf.nextWord()
 	if err != nil {
 		return nil, err
@@ -224,7 +234,7 @@ func ParseIp(buf *Buffer) (interface{}, error) {
 }
 
 // *net.IPNet
-func ParsePrefix(buf *Buffer) (interface{}, error) {
+func ParsePrefix(buf *sReader) (interface{}, error) {
 	w, err := buf.nextWord()
 	if err != nil {
 		return nil, err
@@ -243,7 +253,25 @@ type Table struct {
 	maker EntryMaker
 }
 
+func (t Table)String() string {
+	var s string
+	for id, e := range t.dict {
+		s += (fmt.Sprintf("%s:\n", id) +
+			fmt.Sprintln(e))
+	}
+	return s
+}
+
 type BabelDesc map[Id](Table)
+
+func (bd BabelDesc)String() string {
+	var s string
+	for id, t := range bd {
+		s += (fmt.Sprintf("*\t%s\n", id) +
+			fmt.Sprintln(t))
+	}
+	return s
+}
 
 func NewBabelDesc() BabelDesc {
 	ts := make(map[Id](Table))
@@ -281,7 +309,7 @@ func (t Table)Flush(id Id) error {
 	return nil
 }
 
-func ParseAction(t *BabelDesc, buf *Buffer) error {
+func ParseAction(t *BabelDesc, buf *sReader) error {
 	w, err := buf.nextWord()
 	if err != nil {
 		return err
@@ -314,18 +342,18 @@ func ParseAction(t *BabelDesc, buf *Buffer) error {
 }
 
 func (t *BabelDesc)Fill(reader *bufio.Reader) error {
-	var buf Buffer
+	var buf sReader
 	for {
 		err := buf.nextLine(reader)
 		if err != nil && err != io.EOF {
 			return err
 		}
+		parserr := ParseAction(t, &buf)
+		if parserr != nil {
+			return parserr
+		}
 		if err == io.EOF {
 			break
-		}
-		err = ParseAction(t, &buf)
-		if err != nil {
-			return err
 		}
 	}
 	return nil
