@@ -1,12 +1,13 @@
 package ws
 
 import (
+	"babelweb2/parser"
+
 	"log"
 	"net/http"
 	"time"
+
 	"github.com/gorilla/websocket"
-	
-	"github.com/babelweb2/parser"
 )
 
 const port string = ":8080"
@@ -17,9 +18,9 @@ const cssPage = "static/css/style.css"
 const d3 = "static/js/d3/d3.js"*/
 
 const root = "static/"
-const jsPage = "static/js/"
+const jsPage = "static/js"
 const cssPage = "static/css/"
-const d3 = "static/js/"
+const d3 = "static/js"
 
 const (
 	delete = iota
@@ -36,9 +37,7 @@ var upgrader = websocket.Upgrader{
 //WSMessage messages to send to the client via websocket
 type WSMessage struct {
 	typeUpdate string
-	tableId string
-	entryId string
-	update parser.Entry
+	update     parser.Entry
 }
 
 /*-----------------------------------------------------------------*/
@@ -46,7 +45,6 @@ type WSMessage struct {
 func test(updates chan interface{}) {
 	for {
 		time.Sleep(1000000000)
-		log.Println("test")
 		updates <- "salut"
 	}
 
@@ -99,7 +97,7 @@ func HandleMessage(mess []byte) {
 //WsHandler manage the websockets
 func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routeinfo
 	fn := func(w http.ResponseWriter, r *http.Request) {
-
+		log.Println("bip")
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Could not create the socket.", err)
