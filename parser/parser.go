@@ -2,41 +2,34 @@ package parser
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
 	"strconv"
-	"strings"
 )
 
-type sReader struct {
-	ligne []string
-	index int
-}
+var errEOL = errors.New("EOL")
 
-func (b *sReader) nextLine(reader *bufio.Reader) error {
-	w, err := reader.ReadBytes('\n')
-	if err != nil && err != io.EOF {
-		return err
+func nextWord(s *bufio.Scanner) (string, error) {
+	more := s.Scan()
+	if more {
+		if s.Text() == "\n" {
+			return "", errEOL
+		} else {
+			return s.Text(), nil
+		}
 	}
-	b.ligne = strings.Fields(string(w))
-	b.index = 0
-	return err
-}
-
-func (b *sReader) nextWord() (string, error) {
-	if b.index == len(b.ligne) {
+	err := s.Err()
+	if err == nil {
 		return "", io.EOF
 	}
-	defer func() {
-		b.index++
-	}()
-	return b.ligne[b.index], nil
+	return "", err
 }
 
 type Id string
 
-type EntryParser func(*sReader) (interface{}, error)
+type EntryParser func(*bufio.Scanner) (interface{}, error)
 
 type EntryValue struct {
 	data   interface{}
@@ -93,26 +86,26 @@ func (e *Entry) GetData(id Id) (interface{}, error) {
 	return value.data, nil
 }
 
-func (e *Entry) Parse(buf *sReader) error {
+func (e *Entry) Parse(s *bufio.Scanner) error {
 	for {
-		w, err := buf.nextWord()
+		w, err := nextWord(s)
 		if err != nil {
 			return err
 		}
 		value, exists := (*e)[Id(w)]
 		if !exists {
-			_, err = buf.nextWord()
+			_, err = nextWord(s)
 			if err != nil {
 				return err
 			}
 			continue
 		}
-		new_data, err := value.parser(buf)
-		if err != nil && err != io.EOF {
+		new_data, err := value.parser(s)
+		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
 		value.data = new_data
-		if err == io.EOF {
+		if err == io.EOF || err == errEOL {
 			return err
 		}
 	}
@@ -170,13 +163,13 @@ func (e ParsErr) Error() string {
 const SyntaxError ParsErr = 0
 
 // string
-func ParseString(buf *sReader) (interface{}, error) {
-	return buf.nextWord()
+func ParseString(s *bufio.Scanner) (interface{}, error) {
+	return nextWord(s)
 }
 
 // bool
-func ParseBool(buf *sReader) (interface{}, error) {
-	w, err := buf.nextWord()
+func ParseBool(s *bufio.Scanner) (interface{}, error) {
+	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
 	}
@@ -192,8 +185,8 @@ func ParseBool(buf *sReader) (interface{}, error) {
 
 // int64
 func GetIntParser(base int, bitSize int) EntryParser {
-	return func(buf *sReader) (interface{}, error) {
-		w, err := buf.nextWord()
+	return func(s *bufio.Scanner) (interface{}, error) {
+		w, err := nextWord(s)
 		if err != nil {
 			return nil, err
 		}
@@ -207,8 +200,8 @@ func GetIntParser(base int, bitSize int) EntryParser {
 
 // uint64
 func GetUintParser(base int, bitSize int) EntryParser {
-	return func(buf *sReader) (interface{}, error) {
-		w, err := buf.nextWord()
+	return func(s *bufio.Scanner) (interface{}, error) {
+		w, err := nextWord(s)
 		if err != nil {
 			return nil, err
 		}
@@ -221,8 +214,8 @@ func GetUintParser(base int, bitSize int) EntryParser {
 }
 
 // net.IP
-func ParseIp(buf *sReader) (interface{}, error) {
-	w, err := buf.nextWord()
+func ParseIp(s *bufio.Scanner) (interface{}, error) {
+	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
 	}
@@ -234,8 +227,8 @@ func ParseIp(buf *sReader) (interface{}, error) {
 }
 
 // *net.IPNet
-func ParsePrefix(buf *sReader) (interface{}, error) {
-	w, err := buf.nextWord()
+func ParsePrefix(s *bufio.Scanner) (interface{}, error) {
+	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
 	}
@@ -311,16 +304,16 @@ func (t Table) Flush(id Id) error {
 
 type WSMessage struct {
 	typeUpdate string
-	tableId string
-	entryId string
-	update Entry
+	tableId    string
+	entryId    string
+	update     Entry
 }
 
-func ParseAction(t *BabelDesc, buf *sReader) (WSMessage, error) {
+func ParseAction(t *BabelDesc, s *bufio.Scanner) (WSMessage, error) {
 
 	var wsm WSMessage
-	
-	w, err := buf.nextWord()
+
+	w, err := nextWord(s)
 	if err != nil {
 		return wsm, err
 	}
@@ -330,22 +323,22 @@ func ParseAction(t *BabelDesc, buf *sReader) (WSMessage, error) {
 		}
 		return wsm, nil
 	}
-	table_id, err := buf.nextWord()
+	table_id, err := nextWord(s)
 	if err != nil {
 		return wsm, err
 	}
-	entry_id, err := buf.nextWord()
+	entry_id, err := nextWord(s)
 	if err != nil {
 		return wsm, err
 	}
 	new_entry := (*t)[Id(table_id)].maker()
-	err = new_entry.Parse(buf)
-	if err != io.EOF {
+	err = new_entry.Parse(s)
+	if err != io.EOF && err != errEOL {
 		return wsm, err
 	}
-	
+
 	wsm = WSMessage{w, table_id, entry_id, new_entry}
-	
+
 	switch w {
 	case "add":
 		return wsm, (*t)[Id(table_id)].Add(Id(entry_id), new_entry)
@@ -357,18 +350,44 @@ func ParseAction(t *BabelDesc, buf *sReader) (WSMessage, error) {
 	return wsm, nil
 }
 
-func (t *BabelDesc) Fill(reader *bufio.Reader) error {
-	var buf sReader
+func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	start := 0
+	for start < len(data) && (data[start] == ' ' || data[start] == '\r') {
+		start++
+	}
+
+	if start < len(data) && data[start] == '\n' {
+		return start + 1, []byte{'\n'}, nil
+	}
+	if start < len(data) && data[start] == '"' {
+		panic("Not implemented yet")
+	}
+	i := start
+	for i < len(data) && data[i] != ' ' && data[i] != '\r' &&
+		data[i] != '\n' {
+		i++
+	}
+	if i < len(data) {
+		return i, data[start:i], nil
+	}
+
+	if atEOF && start < len(data) {
+		return len(data), data[start:], nil
+	}
+
+	return start, nil, nil
+
+}
+
+func (t *BabelDesc) Fill(reader io.Reader) error {
+	s := bufio.NewScanner(reader)
+	s.Split(split)
 	for {
-		err := buf.nextLine(reader)
-		if err != nil && err != io.EOF {
+		_, err := ParseAction(t, s)
+		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
-		_, parserr := ParseAction(t, &buf)
-		if parserr != nil && parserr != io.EOF {
-			return parserr
-		}
-		if err == io.EOF || parserr == io.EOF {
+		if err == io.EOF {
 			break
 		}
 	}
