@@ -10,6 +10,7 @@ import (
 )
 
 var errEOL = errors.New("EOL")
+var ErrUnterminatedString = errors.New("Unterminated String")
 
 func nextWord(s *bufio.Scanner) (string, error) {
 	more := s.Scan()
@@ -350,6 +351,8 @@ func ParseAction(t *BabelDesc, s *bufio.Scanner) (WSMessage, error) {
 	return wsm, nil
 }
 
+// This is not quite correct, since it doesn't deal with quoting with backslash.
+// Since babeld doesn't generate that yet, this doesn't matter much.
 func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	start := 0
 	for start < len(data) && (data[start] == ' ' || data[start] == '\r') {
@@ -360,7 +363,17 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		return start + 1, []byte{'\n'}, nil
 	}
 	if start < len(data) && data[start] == '"' {
-		panic("Not implemented yet")
+		i := start + 1
+		for i < len(data) && data[i] != '"' {
+			i++
+		}
+		if i < len(data) {
+			return i + 1, data[start+1:i], nil
+		}
+		if atEOF {
+			return 0, nil, ErrUnterminatedString
+		}
+		return start, nil, nil
 	}
 	i := start
 	for i < len(data) && data[i] != ' ' && data[i] != '\r' &&
