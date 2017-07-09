@@ -12,21 +12,20 @@ func TestParser(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	br := bufio.NewReader(r)
+	s := bufio.NewScanner(r)
 	bd := NewBabelDesc()
-	err = bd.Fill(br)
-	if err != nil {
-		t.Error(err)
+	updChan := make(chan BabelUpdate)
+	go bd.Listen(s, updChan)
+	for upd := range updChan {
+		if testing.Verbose() {
+			fmt.Print(upd)
+		}
+		err = bd.Update(upd)
+		if err != nil {
+			t.Error(err)
+		}
 	}
 	if testing.Verbose() {
-		fmt.Println("Fill\n", bd)
-	}
-	err = bd.Fill(br)
-	if err != nil {
-		t.Error(err)
-	}
-	if testing.Verbose() {
-		fmt.Println("Update\n", bd)
-		fmt.Println(bd)
+		fmt.Printf("\n%s\n", bd)
 	}
 }

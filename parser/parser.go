@@ -151,7 +151,7 @@ func NewXrouteEntry() Entry {
 	i := NewEntry()
 	i.AddField("prefix", ParsePrefix)
 	i.AddField("from", ParsePrefix)
-	i.AddField("meric", GetUintParser(10, 16))
+	i.AddField("metric", GetUintParser(10, 16))
 	return i
 }
 
@@ -303,52 +303,57 @@ func (t Table) Flush(id Id) error {
 	return nil
 }
 
-type WSMessage struct {
-	typeUpdate string
-	tableId    string
-	entryId    string
-	update     Entry
+type BabelUpdate struct {
+	action  Id
+	tableId Id
+	entryId Id
+	entry   Entry
 }
 
-func ParseAction(t *BabelDesc, s *bufio.Scanner) (WSMessage, error) {
+var emptyUpdate = BabelUpdate{action: Id("none")}
 
-	var wsm WSMessage
+func (upd BabelUpdate) String() string {
+	return fmt.Sprintf("%s: %s %s\n%s", upd.action, upd.tableId,
+		upd.entryId, upd.entry)
 
+}
+
+func (bd *BabelDesc) ParseAction(s *bufio.Scanner) (BabelUpdate, error) {
 	w, err := nextWord(s)
 	if err != nil {
-		return wsm, err
+		return emptyUpdate, err
 	}
 	if w != "add" && w != "change" && w != "flush" {
-		if w == "ok" {
-			return wsm, io.EOF
-		}
-		return wsm, nil
+		return emptyUpdate, nil
 	}
 	table_id, err := nextWord(s)
 	if err != nil {
-		return wsm, err
+		return emptyUpdate, err
 	}
 	entry_id, err := nextWord(s)
 	if err != nil {
-		return wsm, err
+		return emptyUpdate, err
 	}
-	new_entry := (*t)[Id(table_id)].maker()
+	new_entry := (*bd)[Id(table_id)].maker()
 	err = new_entry.Parse(s)
 	if err != io.EOF && err != errEOL {
-		return wsm, err
+		return emptyUpdate, err
 	}
+	return BabelUpdate{Id(w), Id(table_id), Id(entry_id), new_entry}, err
+}
 
-	wsm = WSMessage{w, table_id, entry_id, new_entry}
-
-	switch w {
+func (bd *BabelDesc) Update(upd BabelUpdate) error {
+	switch upd.action {
 	case "add":
-		return wsm, (*t)[Id(table_id)].Add(Id(entry_id), new_entry)
+		return (*bd)[Id(upd.tableId)].Add(
+			Id(upd.entryId), upd.entry)
 	case "change":
-		return wsm, (*t)[Id(table_id)].Change(Id(entry_id), new_entry)
+		return (*bd)[Id(upd.tableId)].Change(
+			Id(upd.entryId), upd.entry)
 	case "flush":
-		return wsm, (*t)[Id(table_id)].Flush(Id(entry_id))
+		return (*bd)[Id(upd.tableId)].Flush(Id(upd.entryId))
 	}
-	return wsm, nil
+	return nil
 }
 
 // This is not quite correct, since it doesn't deal with quoting with backslash.
@@ -368,7 +373,7 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 			i++
 		}
 		if i < len(data) {
-			return i + 1, data[start+1:i], nil
+			return i + 1, data[start+1 : i], nil
 		}
 		if atEOF {
 			return 0, nil, ErrUnterminatedString
@@ -392,16 +397,19 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 }
 
-func (t *BabelDesc) Fill(reader io.Reader) error {
-	s := bufio.NewScanner(reader)
+func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
+	defer close(updChan)
 	s.Split(split)
 	for {
-		_, err := ParseAction(t, s)
+		upd, err := t.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
 		if err == io.EOF {
 			break
+		}
+		if upd.action != emptyUpdate.action {
+			updChan <- upd
 		}
 	}
 	return nil
