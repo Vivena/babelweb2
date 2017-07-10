@@ -10,11 +10,7 @@ import (
 	"sync"
 )
 
-const (
-	dump    = "dump\n"
-	monitor = "monitor\n"
-	node    = "[::1]:33123"
-)
+const node = "[::1]:33123"
 
 var Bd parser.BabelDesc
 
@@ -25,7 +21,7 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 		return
 	}
 	defer conn.Close()
-	fmt.Fprintf(conn, monitor)
+	fmt.Fprintf(conn, "monitor\n")
 	r := bufio.NewReader(conn)
 	s := bufio.NewScanner(r)
 	for {
