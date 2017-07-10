@@ -96,7 +96,7 @@ function BabelWebV2() {
 
     this.onmessage = function(event) {
       console.log(event)
-      ConvertJSON(event)
+    //  ConvertJSON(event)
     };
 
     // this.send("Hello world!");
