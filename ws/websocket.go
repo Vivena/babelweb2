@@ -2,10 +2,8 @@ package ws
 
 import (
 	"babelweb2/parser"
-
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -32,22 +30,10 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-/*-----------------------------------------------------------------*/
-
-//WSMessage messages to send to the client via websocket
-type WSMessage struct {
+//Message messages to send to the client via websocket
+type Message struct {
 	typeUpdate string
 	update     parser.Entry
-}
-
-/*-----------------------------------------------------------------*/
-
-func test(updates chan interface{}) {
-	for {
-		time.Sleep(1000000000)
-		updates <- "salut"
-	}
-
 }
 
 func weight(x int) int {
@@ -99,10 +85,8 @@ func HandleMessage(mess []byte) {
 	return
 }
 
-/*-----------------------------------------------------------------*/
-
-//WsHandler manage the websockets
-func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routeinfo
+//Handler manage the websockets
+func Handler(l *Listenergroupe) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log.Println("bip")
 		conn, err := upgrader.Upgrade(w, r, nil)
@@ -115,13 +99,14 @@ func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routein
 		log.Println("New connection to a websocket")
 		updates := NewListener()
 		l.Push(updates)
-		defer l.Quit(updates)
+		defer l.Flush(updates)
 		mess := make(chan []byte, ChanelSize)
 		go GetMess(conn, mess)
 		for {
 			//we wait for a new message from the client or from our chanel
 			select {
 			case lastUp := <-updates.conduct: //we got a new update on the chanel
+				log.Println("test")
 				log.Println(lastUp)
 				err := conn.WriteJSON(lastUp)
 				if err != nil {
@@ -150,13 +135,12 @@ func WsHandler(l *Listenergroupe) http.Handler { //TODO interface et non routein
 
 /*-----------------------------------------------------------------*/
 
-func WsManager(updates chan interface{}) {
+//Manager create the lsitenerGroupe and dispatch the pages called by the client
+func Manager(updates chan interface{}) {
 	//creation du chanel pour communiquer avec le reste du serv
-	log.Println("test")
-	go test(updates)
 	bcastGrp := NewListenerGroupe()
 	go MCUpdates(updates, bcastGrp)
-	ws := WsHandler(bcastGrp)
+	ws := Handler(bcastGrp)
 
 	http.Handle("/", http.FileServer(http.Dir(root)))
 	http.Handle("/style.css", http.FileServer(http.Dir(cssPage)))

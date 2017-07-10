@@ -55,8 +55,8 @@ func (g *Listenergroupe) Push(newListener *Listener) {
 	g.listeners.PushBack(newListener)
 }
 
-//Quit remove a Listener from the Listenergroupe
-func (g *Listenergroupe) Quit(l *Listener) {
+//Flush remove a Listener from the Listenergroupe
+func (g *Listenergroupe) Flush(l *Listener) {
 	defer log.Println("Remouving listener from  the Listener groupe")
 	g.Lock()
 	defer g.Unlock()

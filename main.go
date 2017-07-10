@@ -33,37 +33,11 @@ func Connection(updates chan interface{}, node string) {
 	defer conn.Close()
 	fmt.Fprintf(conn, monitor)
 	r := bufio.NewReader(conn)
+	s := bufio.NewScanner(r)
 	for {
-		Bd.Fill(r)
+		Bd.Listen(s, updates)
 	}
 }
-
-/*
-func testConnection() {
-	conn, err := net.Dial("tcp6", node)
-	if err != nil {
-		log.Println("node ", err)
-		return
-	}
-	defer conn.Close()
-	fmt.Fprintf(conn, dump)
-	bd := NewBabelDesc()
-
-
-
-	/*
-	for {
-		message, err := bufio.NewReader(conn).ReadString('\n')
-		if err != nil {
-			log.Println("no")
-			break
-		}
-		log.Println(message)
-		if message == "ok" || message == "bad" || message == "no" {
-			break
-		}
-	}*/
-//}
 
 func main() {
 	var wg sync.WaitGroup
@@ -73,7 +47,7 @@ func main() {
 	log.Println("test1")
 	go Connection(updates, node)
 	log.Println("test2")
-	go ws.WsManager(updates)
+	go ws.Manager(updates)
 
 	wg.Wait()
 }

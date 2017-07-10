@@ -397,7 +397,7 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 }
 
-func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
+func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan interface{}) error {
 	defer close(updChan)
 	s.Split(split)
 	for {

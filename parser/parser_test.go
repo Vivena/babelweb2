@@ -14,13 +14,15 @@ func TestParser(t *testing.T) {
 	}
 	s := bufio.NewScanner(r)
 	bd := NewBabelDesc()
-	updChan := make(chan BabelUpdate)
+	updChan := make(chan interface{})
 	go bd.Listen(s, updChan)
 	for upd := range updChan {
 		if testing.Verbose() {
 			fmt.Print(upd)
 		}
-		err = bd.Update(upd)
+		up := upd.(BabelUpdate)
+
+		err = bd.Update(up)
 		if err != nil {
 			t.Error(err)
 		}
