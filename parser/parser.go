@@ -310,15 +310,18 @@ type BabelUpdate struct {
 	entry   Entry
 }
 
-type SBabelUpdate map[Id]interface{}
+type SBabelUpdate struct {
+	action  Id
+	tableId Id
+	entryId Id
+	entryData map[Id] interface{}
+}
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
-	s_upd := make(map[Id]interface{})
-	s_upd["action"] = upd.action
-	s_upd["tableId"] = upd.tableId
-	s_upd["entryId"] = upd.entryId
+	s_upd := SBabelUpdate{upd.action, upd.tableId, upd.entryId,
+		make(map[Id]interface{})}
 	for id, ev := range upd.entry {
-		s_upd[id] = ev.data
+		s_upd.entryData[id] = ev.data
 	}
 	return s_upd
 }
