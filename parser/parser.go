@@ -9,6 +9,7 @@ import (
 	"strconv"
 )
 
+var Bd BabelDesc
 var errEOL = errors.New("EOL")
 var ErrUnterminatedString = errors.New("Unterminated String")
 
@@ -311,10 +312,10 @@ type BabelUpdate struct {
 }
 
 type SBabelUpdate struct {
-	action  Id
-	tableId Id
-	entryId Id
-	entryData map[Id] interface{}
+	action    Id
+	tableId   Id
+	entryId   Id
+	entryData map[Id]interface{}
 }
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
