@@ -95,7 +95,7 @@ function BabelWebV2() {
     };
 
     this.onmessage = function(event) {
-      console.log(event)
+      console.log(event);
     //  ConvertJSON(event)
     };
 
@@ -106,45 +106,45 @@ function BabelWebV2() {
 
   }
 
-  function ConvertJSON(message) {
-    var data = JSON.parse(message.data);
-
-    switch (data.action) {
-      case "add": add(data.action);
-        break;
-      case "change":change(data.action);
-        break;
-      case "flush": flush(data.action);
-        break;
-      default:
-    }
-  }
-
-  function add(message){
-//{action : add , tableId : route , entryId : 12354 ,
-// entry : {prefix : bla , reach : bla , ...}  }
-
-    switch (message.tableId) {
-      case "Route":
-        Routes.push(new RouteEntry(message.tableId.entryId.));
-        break;
-      case "Xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
-        break;
-      case "Interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
-        break;
-      case "Neighbour":
-        break;
-      default:
-    }
-  }
-
-  function change(message){
-
-  }
-
-  function flush(message){
-
-  }
+//   function ConvertJSON(message) {
+//     var data = JSON.parse(message.data);
+//
+//     switch (data.action) {
+//       case "add": add(data.action);
+//         break;
+//       case "change":change(data.action);
+//         break;
+//       case "flush": flush(data.action);
+//         break;
+//       default:
+//     }
+//   }
+//
+//   function add(message){
+// //{action : add , tableId : route , entryId : 12354 ,
+// // entry : {prefix : bla , reach : bla , ...}  }
+//
+//     switch (message.tableId) {
+//       case "Route":
+//         Routes.push(new RouteEntry(message.tableId.entryId.));
+//         break;
+//       case "Xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
+//         break;
+//       case "Interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
+//         break;
+//       case "Neighbour":
+//         break;
+//       default:
+//     }
+//   }
+//
+//   function change(message){
+//
+//   }
+//
+//   function flush(message){
+//
+//   }
 
   function initGraph() {
     var svg = d3.select("svg"),
