@@ -4,13 +4,24 @@
         <meta charset="utf-8">
         <title>Babelweb</title>
         <link rel="stylesheet" type="text/css" href="/style.css">
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+    </head>
     <body>
-
-        <p>
-          test bonjour
-        </p>
+        <h1> BabelWeb </h1>
+        <svg width="600" height="400"></svg>
 
         <script src="/d3/d3.js"></script>
-        <script src="/initialize.js"></script>
+        <script src="./js/initialize.js"></script>
+        <script type="text/javascript">
+
+
+          var babelweb  = BabelWebV2();
+          window.onload = function() {
+              babelweb.init();
+              babelweb.connect();
+              babelweb.initGraph();
+          }
+
+        </script>
     </body>
 </html>
