@@ -2,13 +2,54 @@
 
 function BabelWebV2() {
   /* ----    A propos de babel    ----*/
+  var Routes = {};
+  var Xroutes = {};
+  var Neighbours ={};
+  var Interfaces ={};
 
-  var nodes = [];
-  var links = [];
+  /*----   graphe    ----*/
+  var nodes = [];   //liste des noeuds du graphe
+  var links = [];   //les liens
 
+/* ----    A propos de babel    ----*/
+  function NeighbourEntry(address, iff, reach, rxcost, txcost, cost, rtt, rttcost) {
+    this.address = address;
+    this.iff = iff;
+    this.reach = reach;
+    this.rxcost = rxcost;
+    this.txcost = txcost;
+    this.cost = cost;
+    this.rtt = rtt;
+    this.rttcost = rttcost;
+  }
+
+  function RouteEntry(prefix, from, installed, id, metric, refmetric, via, iff){
+    this.prefix = prefix;
+    this.from = from;
+    this.installed = installed;
+    this.id = id;
+    this.metric = metric;
+    this.refmetric = refmetric;
+    this.via = via;
+    this.iff = iff;
+  }
+
+  function XrouteEntry(prefix, from,metric) {
+    this.prefix = prefix;
+    this.from = from;
+    this.metric = metric;
+  }
+
+  function InterfaceEntry(up, ipv4, ipv6) {
+    this.up = up;
+    this.ipv4 = ipv4;
+    this.ipv6 = ipv6;
+  }
+
+  /*----   graphe    ----*/
   function Node(id ,group) {
-          this.id = id;
-          this.group = group;
+    this.id = id;
+    this.group = group;
   }
 
   function Link(source,target,value) {
@@ -17,7 +58,7 @@ function BabelWebV2() {
           this.value = value;
   }
 
-  /*----   test   ----*/
+  /*----   test graphe  ----*/
   nodes.push(new Node("Myriel",1));
   nodes.push(new Node("Napoleon",1));
   nodes.push(new Node("Mlle.Baptistine",1));
@@ -54,12 +95,8 @@ function BabelWebV2() {
     };
 
     this.onmessage = function(event) {
-      d3.select("body").select("p")
-      .append("p")
-      .text("message reçu");
-      console.log("message");
       console.log(event)
-    //  ConvertJSON(event)
+      ConvertJSON(event)
     };
 
     // this.send("Hello world!");
@@ -73,16 +110,40 @@ function BabelWebV2() {
     var data = JSON.parse(message.data);
 
     switch (data.action) {
-      case "add":
+      case "add": add(data.action);
         break;
-      case "change":
+      case "change":change(data.action);
         break;
-
-      case "flush":
+      case "flush": flush(data.action);
         break;
-
       default:
     }
+  }
+
+  function add(message){
+//{action : add , tableId : route , entryId : 12354 ,
+// entry : {prefix : bla , reach : bla , ...}  }
+
+    switch (message.tableId) {
+      case "Route":
+        Routes.push(new RouteEntry(message.tableId.entryId.));
+        break;
+      case "Xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
+        break;
+      case "Interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
+        break;
+      case "Neighbour":
+        break;
+      default:
+    }
+  }
+
+  function change(message){
+
+  }
+
+  function flush(message){
+
   }
 
   function initGraph() {
