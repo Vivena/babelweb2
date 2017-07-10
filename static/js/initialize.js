@@ -88,7 +88,7 @@ function BabelWebV2() {
     var t = d3.select("body")
               .append("p")
               .text("Connected");
-    }
+    };
 
     this.onclose = function(event) {
       console.log("Disconnected.");
