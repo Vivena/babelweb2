@@ -12,8 +12,6 @@ import (
 
 const node = "[::1]:33123"
 
-var Bd parser.BabelDesc
-
 func Connection(updates chan parser.BabelUpdate, node string) {
 	conn, err := net.Dial("tcp6", node)
 	if err != nil {
@@ -25,7 +23,7 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 	r := bufio.NewReader(conn)
 	s := bufio.NewScanner(r)
 	for {
-		Bd.Listen(s, updates)
+		parser.Bd.Listen(s, updates)
 	}
 }
 
@@ -33,7 +31,7 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
-	Bd = parser.NewBabelDesc()
+	parser.Bd = parser.NewBabelDesc()
 	log.Println("test1")
 	go Connection(updates, node)
 	log.Println("test2")
