@@ -54,8 +54,12 @@ function BabelWebV2() {
     };
 
     this.onmessage = function(event) {
+      d3.select("body").select("p")
+      .append("p")
+      .text("message reçu");
+      console.log("message");
       console.log(event)
-      ConvertJSON(event)
+    //  ConvertJSON(event)
     };
 
     // this.send("Hello world!");
@@ -69,7 +73,7 @@ function BabelWebV2() {
     var data = JSON.parse(message.data);
 
     switch (data.action) {
-      case "add": 
+      case "add":
         break;
       case "change":
         break;
