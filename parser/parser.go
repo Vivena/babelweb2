@@ -310,6 +310,22 @@ type BabelUpdate struct {
 	entry   Entry
 }
 
+type SBabelUpdate struct {
+	action  Id
+	tableId Id
+	entryId Id
+	entryData map[Id] interface{} 
+}
+
+func (upd BabelUpdate) ToS() SBabelUpdate {
+	s_upd := SBabelUpdate{upd.action, upd.tableId,
+		upd.entryId, make(map[Id] interface{})}
+	for id, ev := range upd.entry {
+		s_upd.entryData[id] = ev.data
+	}
+	return s_upd
+}
+
 var emptyUpdate = BabelUpdate{action: Id("none")}
 
 func (upd BabelUpdate) String() string {
@@ -397,7 +413,7 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 }
 
-func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan interface{}) error {
+func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
 	defer close(updChan)
 	s.Split(split)
 	for {

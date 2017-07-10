@@ -4,7 +4,6 @@ import (
 	"babelweb2/parser"
 	"log"
 	"net/http"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -52,7 +51,7 @@ func getEntries() {
 /*-----------------------------------------------------------------*/
 
 //MCUpdates multicast updates sent by the routine comminicating with the routers
-func MCUpdates(updates chan interface{}, g *Listenergroupe) {
+func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 	for {
 		update, quit := <-updates
 		if quit == false {
@@ -136,7 +135,7 @@ func Handler(l *Listenergroupe) http.Handler {
 /*-----------------------------------------------------------------*/
 
 //Manager create the lsitenerGroupe and dispatch the pages called by the client
-func Manager(updates chan interface{}) {
+func Manager(updates chan parser.BabelUpdate) {
 	//creation du chanel pour communiquer avec le reste du serv
 	bcastGrp := NewListenerGroupe()
 	go MCUpdates(updates, bcastGrp)
