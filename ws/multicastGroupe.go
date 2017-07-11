@@ -1,6 +1,7 @@
 package ws
 
 import (
+	"babelweb2/parser"
 	"container/list"
 	"log"
 	"sync"
@@ -12,7 +13,7 @@ var globalClose = make(chan struct{})
 
 //Listener unique channel for each ws
 type Listener struct {
-	conduct chan interface{}
+	conduct chan parser.SBabelUpdate
 	quit    chan struct{}
 }
 
@@ -20,7 +21,7 @@ type Listener struct {
 
 //Init create a Listener
 func (l *Listener) Init() *Listener {
-	l.conduct = make(chan interface{})
+	l.conduct = make(chan parser.SBabelUpdate)
 	l.quit = globalClose
 	return l
 }

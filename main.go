@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"sync"
 )
 
@@ -32,10 +33,19 @@ func main() {
 	wg.Add(2)
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	parser.Bd = parser.NewBabelDesc()
-	log.Println("test1")
 	go Connection(updates, node)
-	log.Println("test2")
-	go ws.Manager(updates)
-
+	bcastGrp := ws.NewListenerGroupe()
+	go ws.MCUpdates(updates, bcastGrp)
+	ws := ws.Handler(bcastGrp)
+	log.Println("manager lauched")
+	http.Handle("/", http.FileServer(http.Dir("static/")))
+	http.Handle("/style.css", http.FileServer(http.Dir("static/css/")))
+	http.Handle("/initialize.js", http.FileServer(http.Dir("static/js")))
+	http.Handle("/d3/d3.js", http.FileServer(http.Dir("static/js")))
+	http.Handle("/ws", ws)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return
+	}
 	wg.Wait()
 }

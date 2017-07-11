@@ -2,8 +2,10 @@ package ws
 
 import (
 	"babelweb2/parser"
+	"encoding/json"
 	"log"
 	"net/http"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -30,10 +32,7 @@ var upgrader = websocket.Upgrader{
 }
 
 //Message messages to send to the client via websocket
-type Message struct {
-	typeUpdate string
-	update     parser.Entry
-}
+type Message map[string]interface{}
 
 func weight(x int) int {
 	x = (x & 0x5555) + ((x >> 1) & 0x5555)
@@ -52,18 +51,19 @@ func getEntries() {
 
 //MCUpdates multicast updates sent by the routine comminicating with the routers
 func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
-	for {
-		update, quit := <-updates
-		if quit == false {
-			log.Println("closing all chanels")
-			close(globalClose)
-			return
-		}
-		g.Iter(func(l *Listener) {
-			l.conduct <- update
-		})
-
+	update, quit := <-updates
+	if quit == false {
+		log.Println("closing all chanels")
+		close(globalClose)
+		return
 	}
+	//lock()
+	//bd.up()
+	t := update.ToS()
+	g.Iter(func(l *Listener) {
+		l.conduct <- t
+	})
+	//unlock()
 }
 
 //GetMess gets messages sent by the client and redirect them to the mess chanel
@@ -105,15 +105,25 @@ func Handler(l *Listenergroupe) http.Handler {
 			//we wait for a new message from the client or from our chanel
 			select {
 			case lastUp := <-updates.conduct: //we got a new update on the chanel
-				log.Println("test")
-				log.Println(lastUp)
-				err := conn.WriteJSON(lastUp)
+				log.Println("\n test")
+				j, jerr := json.Marshal(lastUp)
+				if err != nil {
+					log.Println(jerr)
+				}
+				test := Message{}
+				json.Unmarshal(j, &test)
+				log.Println("test1:", lastUp)
+				log.Println("test2:", string(j))
+				log.Println("test3:", test)
+
+				err := conn.WriteJSON(j)
 				if err != nil {
 					log.Println(err)
 				}
 
 			case _, q := <-updates.quit:
 				if q == false {
+
 					return
 				}
 
@@ -130,25 +140,4 @@ func Handler(l *Listenergroupe) http.Handler {
 		}
 	}
 	return http.HandlerFunc(fn)
-}
-
-/*-----------------------------------------------------------------*/
-
-//Manager create the lsitenerGroupe and dispatch the pages called by the client
-func Manager(updates chan parser.BabelUpdate) {
-	//creation du chanel pour communiquer avec le reste du serv
-	bcastGrp := NewListenerGroupe()
-	go MCUpdates(updates, bcastGrp)
-	ws := Handler(bcastGrp)
-
-	http.Handle("/", http.FileServer(http.Dir(root)))
-	http.Handle("/style.css", http.FileServer(http.Dir(cssPage)))
-	http.Handle("/initialize.js", http.FileServer(http.Dir(jsPage)))
-	http.Handle("/d3/d3.js", http.FileServer(http.Dir(d3)))
-	http.Handle("/ws", ws)
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return
-	}
-
 }
