@@ -312,17 +312,17 @@ type BabelUpdate struct {
 }
 
 type SBabelUpdate struct {
-	action    Id
-	tableId   Id
-	entryId   Id
-	entryData map[Id]interface{}
+	Action    Id                 `json:"action"`
+	TableId   Id                 `json:"tableId"`
+	EntryId   Id                 `json:"entryId"`
+	EntryData map[Id]interface{} `json:"entryMap"`
 }
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
 	s_upd := SBabelUpdate{upd.action, upd.tableId, upd.entryId,
 		make(map[Id]interface{})}
 	for id, ev := range upd.entry {
-		s_upd.entryData[id] = ev.data
+		s_upd.EntryData[id] = ev.data
 	}
 	return s_upd
 }
