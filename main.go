@@ -33,6 +33,7 @@ func main() {
 	wg.Add(2)
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	parser.Bd = parser.NewBabelDesc()
+	log.Println("test1")
 	go Connection(updates, node)
 	bcastGrp := ws.NewListenerGroupe()
 	go ws.MCUpdates(updates, bcastGrp)

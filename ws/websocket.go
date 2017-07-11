@@ -39,19 +39,21 @@ func getEntries() {
 
 //MCUpdates multicast updates sent by the routine comminicating with the routers
 func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
-	update, quit := <-updates
-	if quit == false {
-		log.Println("closing all chanels")
-		close(globalClose)
-		return
+	for {
+		update, quit := <-updates
+		if quit == false {
+			log.Println("closing all chanels")
+			close(globalClose)
+			return
+		}
+		//lock()
+		//bd.up()
+		t := update.ToS()
+		g.Iter(func(l *Listener) {
+			l.conduct <- t
+		})
+		//unlock()
 	}
-	//lock()
-	//bd.up()
-	t := update.ToS()
-	g.Iter(func(l *Listener) {
-		l.conduct <- t
-	})
-	//unlock()
 }
 
 //GetMess gets messages sent by the client and redirect them to the mess chanel
