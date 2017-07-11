@@ -14,7 +14,6 @@ var globalClose = make(chan struct{})
 //Listener unique channel for each ws
 type Listener struct {
 	conduct chan parser.SBabelUpdate
-	//quit    chan struct{}
 }
 
 //WSMessage struc of messages sent by the ws to the clients

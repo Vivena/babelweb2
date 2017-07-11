@@ -4,6 +4,7 @@ import (
 	"babelweb2/parser"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,6 +21,11 @@ var upgrader = websocket.Upgrader{
 
 //Message messages to send to the client via websocket
 type Message map[string]interface{}
+
+type dataBase struct {
+	sync.Mutex
+	bd parser.BabelDesc
+}
 
 func weight(x int) int {
 	x = (x & 0x5555) + ((x >> 1) & 0x5555)
@@ -49,7 +55,10 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 			return
 		}
 		//lock()
-		//bd.up()
+		err := parser.Bd.Update(update)
+		if err != nil {
+			log.Println(err)
+		}
 		t := update.ToS()
 		g.Iter(func(l *Listener) {
 			l.conduct <- t
@@ -86,6 +95,15 @@ func Handler(l *Listenergroupe) http.Handler {
 			return
 		}
 		//TODO parcourt la base de donné et envois tout au client
+		err = parser.Bd.Iter(func(bu parser.BabelUpdate) error {
+			log.Println("bipbip")
+			sbu := bu.ToS()
+			err := conn.WriteJSON(sbu)
+			if err != nil {
+				log.Println(err)
+			}
+			return err
+		})
 
 		log.Println("New connection to a websocket")
 		updates := NewListener()
@@ -98,12 +116,7 @@ func Handler(l *Listenergroupe) http.Handler {
 			select {
 			case lastUp := <-updates.conduct: //we got a new update on the chanel
 				log.Println("\n test")
-				// j, jerr := json.Marshal(lastUp)
-				// if err != nil {
-				// 	log.Println(jerr)
-				// }
-				// test := Message{}
-				// json.Unmarshal(j, &test)
+
 				log.Println("test1:", lastUp)
 				// log.Println("test2:", string(j))
 				// log.Println("test3:", test)
@@ -112,12 +125,6 @@ func Handler(l *Listenergroupe) http.Handler {
 				if err != nil {
 					log.Println(err)
 				}
-
-			// case _, q := <-updates.quit:
-			// 	if q == false {
-			//
-			// 		return
-			// 	}
 
 			case clientMessage, q := <-mess: //we got a message from the client
 				if q == false {
