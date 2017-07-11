@@ -12,26 +12,53 @@ function BabelWebV2() {
   var links = [];   //les liens
 
 /* ----    A propos de babel    ----*/
-  function NeighbourEntry(address, iff, reach, rxcost, txcost, cost, rtt, rttcost) {
+
+/*
+{ action: "change", tableId: "neighbour", entryId: "1e86d90", entryData: Object }
+{"action":"change","tableId":"neighbour","entryId":"1e86d90","entryData":
+                  {"address":"fe80::e046:9aff:fe4e:912e",
+                  "cost":96,
+                  "if":"enp2s0",
+                  "reach":65535,
+                  "rtt":null,
+                  "rttcost":null,
+                  "rxcost":96,
+                  "txcost":96}
+                }}*/
+  function NeighbourEntry(address, cost, iff, reach, rtt, rttcost, rxcost, txcost ) {
     this.address = address;
+    this.cost = cost;
     this.iff = iff;
     this.reach = reach;
-    this.rxcost = rxcost;
-    this.txcost = txcost;
-    this.cost = cost;
     this.rtt = rtt;
     this.rttcost = rttcost;
+    this.rxcost = rxcost;
+    this.txcost = txcost;
   }
-
-  function RouteEntry(prefix, from, installed, id, metric, refmetric, via, iff){
-    this.prefix = prefix;
-    this.from = from;
-    this.installed = installed;
+/*
+{ action: "change", tableId: "route", entryId: "1e87030", entryData: Object }
+{"action":"change","tableId":"route","entryId":"1e870d0","entryData":
+        {
+          "from":{"IP":"::","Mask":"AAAAAAAAAAAAAAAAAAAAAA=="},
+          "id":"e2:46:9a:ff:fe:4e:91:2f",
+          "if":"enp2s0",
+          "installed":true,
+          "metric":96,
+          "prefix":{"IP":"fd1f:f88c:e207::","Mask":"////////AAAAAAAAAAAAAA=="},
+          "refmetric":0,
+          "via":"fe80::e046:9aff:fe4e:912e"
+        }
+}
+*/
+  function RouteEntry(from, id, iff, installed, metric, prefix, refmetric, via){
+    this.from = from; // pour le moment contient juste ip  sans le mask
     this.id = id;
+    this.iff = iff;
+    this.installed = installed;
     this.metric = metric;
+    this.prefix = prefix;
     this.refmetric = refmetric;
     this.via = via;
-    this.iff = iff;
   }
 
   function XrouteEntry(prefix, from,metric) {
@@ -73,78 +100,111 @@ function BabelWebV2() {
   function connect(){
     var socket = null;
     try {
-      socket = new WebSocket("ws://localhost:8080/ws");
+        socket = new WebSocket("ws://localhost:8080/ws");
 
     } catch (exception) {
-      console.error(exception);
+        console.error(exception);
     }
 
     socket.onerror = function(error) {
-      console.error(error);
+        console.error(error);
     };
 
+    // Lorsque la connexion est établie.
     socket.onopen = function(event) {
-      console.log("Connected.");
-    var t = d3.select("body")
+        console.log("Connected.");
+        var t = d3.select("body")
+          .append("p")
+          .text("Connected");
+
+        this.onclose = function(event) {
+        console.log("Disconnected.");
+        };
+
+        this.onmessage = function(event) {
+          //  console.log(event)
+           console.log(event.data);
+            var data = JSON.parse(event.data);
+            console.log(data);
+            var t = d3.select("body")
               .append("p")
-              .text("Connected");
-    };
+              .text("message");
+           // ConvertJSON(event);
 
-    this.onclose = function(event) {
-      console.log("Disconnected.");
+        };
+        //this.send("Hello world!");
     };
-
-    this.onmessage = function(event) {
-      console.log(event);
-    //  ConvertJSON(event)
-    };
-
-    // this.send("Hello world!");
   }
 
   function init(){
 
   }
 
-//   function ConvertJSON(message) {
-//     var data = JSON.parse(message.data);
-//
-//     switch (data.action) {
-//       case "add": add(data.action);
-//         break;
-//       case "change":change(data.action);
-//         break;
-//       case "flush": flush(data.action);
-//         break;
-//       default:
-//     }
-//   }
-//
-//   function add(message){
-// //{action : add , tableId : route , entryId : 12354 ,
-// // entry : {prefix : bla , reach : bla , ...}  }
-//
-//     switch (message.tableId) {
-//       case "Route":
-//         Routes.push(new RouteEntry(message.tableId.entryId.));
-//         break;
-//       case "Xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
-//         break;
-//       case "Interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
-//         break;
-//       case "Neighbour":
-//         break;
-//       default:
-//     }
-//   }
-//
-//   function change(message){
-//
-//   }
-//
-//   function flush(message){
-//
-//   }
+  function ConvertJSON(message) {
+    var data = JSON.parse(message.data);
+
+    switch (data.action) {
+      case "add": add(data.action);
+        break;
+      case "change":change(data.action);
+        break;
+      case "flush": flush(data.action);
+        break;
+      default:
+    }
+  }
+
+  function add(message){
+//{action : add , tableId : route , entryId : 12354 ,
+// entry : {prefix : bla , reach : bla , ...}  }
+/*this.from = from; // pour le moment contient juste ip  sans le mask
+this.id = id;
+this.iff = iff;
+this.installed = installed;
+this.metric = metric;
+this.prefix = prefix;
+this.refmetric = refmetric;
+this.via = via;*/
+
+    switch (message.tableId) {
+      case "neighbour":
+        var entry = message.tableId.entryId.entryData;
+        Neighbours[message.tableId.entryId]= new NeighbourEntry(entry.address,
+                                                              entry.cost,
+                                                              entry.iff,
+                                                              entry.reach,
+                                                              entry.rtt,
+                                                              entry.rttcost,
+                                                              entry.rxcost,
+                                                              entry.txcost);
+        break;
+      case "route":
+        var entry = message.tableId.entryId.entryData;
+        Routes[message.tableId.entryId]= new RouteEntry(entry.from.Ip,
+                                                         entry.id,
+                                                         entry.iff,
+                                                         entry.installed,
+                                                         entry.metric,
+                                                         entry.prefix.Ip,
+                                                         entry.refmetric,
+                                                         entry.via);
+        break;
+      case "xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
+        break;
+      case "interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
+        break;
+
+      default:
+    }
+  }
+
+  function change(message){
+
+  }
+
+  function flush(message){
+
+  }
 
   function initGraph() {
     var svg = d3.select("svg"),
