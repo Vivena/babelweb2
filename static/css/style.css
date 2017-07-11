@@ -7,3 +7,49 @@
   stroke: #fff;
   stroke-width: 1.5px;
 }
+body {
+margin: 10px;
+}
+
+.good { background-color: #CAFF70; }
+.bad { background-color: #FF7256; }
+.loading {font-style: italic ; }
+
+h2 { clear: both; }
+
+#fig {
+        width: 630px;
+        min-height: 425px;
+        float: left;
+}
+
+td, th { font-family: monospace; padding: 0 1ex 0 1ex;}
+td { white-space: nowrap; }
+
+/* Avoid break between legend dot and text */
+p.legend span { float: left; display: block; }
+.legend-title { font-weight: bold; margin-right: 1em; }
+.legend-dot { margin: 0 1ex 0 1ex; }
+
+#route td:nth-child(2) { text-align: right; }
+#route td:nth-child(3) { text-align: right; }
+#route td:nth-child(6) { text-align: center; }
+#route td:nth-child(7) { text-align: center; }
+
+#neighbour td:nth-child(2) { text-align: center; }
+#neighbour td:nth-child(3) { text-align: center; }
+#neighbour td:nth-child(4) { text-align: right; }
+#neighbour td:nth-child(5) { text-align: right; }
+#neighbour td:nth-child(6) { text-align: right; }
+
+#xroute td:nth-child(2) { text-align: right; }
+
+tr:hover { opacity: 0.7; }
+tr {
+  background-color: white;
+  -webkit-transition: background-color 1s;
+  -moz-transition: background-color 1s;
+  -o-transition: background-color 1s;
+  -ms-transition: background-color 1s;
+  transition: background-color 1s;
+}

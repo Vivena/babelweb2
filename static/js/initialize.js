@@ -13,18 +13,6 @@ function BabelWebV2() {
 
 /* ----    A propos de babel    ----*/
 
-/*
-{ action: "change", tableId: "neighbour", entryId: "1e86d90", entryData: Object }
-{"action":"change","tableId":"neighbour","entryId":"1e86d90","entryData":
-                  {"address":"fe80::e046:9aff:fe4e:912e",
-                  "cost":96,
-                  "if":"enp2s0",
-                  "reach":65535,
-                  "rtt":null,
-                  "rttcost":null,
-                  "rxcost":96,
-                  "txcost":96}
-                }}*/
   function NeighbourEntry(address, cost, iff, reach, rtt, rttcost, rxcost, txcost ) {
     this.address = address;
     this.cost = cost;
@@ -35,21 +23,7 @@ function BabelWebV2() {
     this.rxcost = rxcost;
     this.txcost = txcost;
   }
-/*
-{ action: "change", tableId: "route", entryId: "1e87030", entryData: Object }
-{"action":"change","tableId":"route","entryId":"1e870d0","entryData":
-        {
-          "from":{"IP":"::","Mask":"AAAAAAAAAAAAAAAAAAAAAA=="},
-          "id":"e2:46:9a:ff:fe:4e:91:2f",
-          "if":"enp2s0",
-          "installed":true,
-          "metric":96,
-          "prefix":{"IP":"fd1f:f88c:e207::","Mask":"////////AAAAAAAAAAAAAA=="},
-          "refmetric":0,
-          "via":"fe80::e046:9aff:fe4e:912e"
-        }
-}
-*/
+
   function RouteEntry(from, id, iff, installed, metric, prefix, refmetric, via){
     this.from = from; // pour le moment contient juste ip  sans le mask
     this.id = id;
@@ -74,28 +48,23 @@ function BabelWebV2() {
   }
 
   /*----   graphe    ----*/
-  function Node(id ,group) {
+  function Node(id ) {
     this.id = id;
-    this.group = group;
   }
 
-  function Link(source,target,value) {
+  function Link(source,target) {
           this.source = source;
           this.target = target;
-          this.value = value;
   }
 
   /*----   test graphe  ----*/
-  nodes.push(new Node("Myriel",1));
-  nodes.push(new Node("Napoleon",1));
-  nodes.push(new Node("Mlle.Baptistine",1));
-  nodes.push(new Node("Mme.Magloire", 1));
+  nodes.push(new Node("center"));
+  nodes.push(new Node("test"));
+  links.push(new Link("center","test"));
 
-  links.push(new Link("Napoleon","Myriel",1));
-  links.push(new Link("Mlle.Baptistine","Myriel",8));
-  links.push(new Link("Mme.Magloire","Myriel",10));
-  links.push(new Link("Mme.Magloire", "Mlle.Baptistine", 6));
-
+  function init(){
+    //TODO
+  }
 
   function connect(){
     var socket = null;
@@ -110,103 +79,138 @@ function BabelWebV2() {
         console.error(error);
     };
 
-    // Lorsque la connexion est établie.
     socket.onopen = function(event) {
-        console.log("Connected.");
-        var t = d3.select("body")
-          .append("p")
-          .text("Connected");
+        var elem = document.getElementById('state'); // À changer
+        elem.innerHTML = "Connected";
+        elem.style.backgroundColor = "green";
 
         this.onclose = function(event) {
-        console.log("Disconnected.");
+          var elem = document.getElementById('state'); // À changer
+          elem.innerHTML = "Disconnected.";
+          elem.style.backgroundColor = "red";
         };
 
         this.onmessage = function(event) {
-          //  console.log(event)
-           console.log(event.data);
-            var data = JSON.parse(event.data);
-            console.log(data);
-            var t = d3.select("body")
-              .append("p")
-              .text("message");
-           // ConvertJSON(event);
+            ConvertJSON(event);
 
         };
         //this.send("Hello world!");
     };
   }
 
-  function init(){
-
-  }
-
-  function ConvertJSON(message) {
-    var data = JSON.parse(message.data);
+  function ConvertJSON(event) {
+    var data = JSON.parse(event.data);
+    console.log(data);
 
     switch (data.action) {
-      case "add": add(data.action);
+      case "add": add(data);
         break;
-      case "change":change(data.action);
+      case "change":add(data);
         break;
-      case "flush": flush(data.action);
+      case "flush": flush(data);
         break;
       default:
     }
   }
 
-  function add(message){
-//{action : add , tableId : route , entryId : 12354 ,
-// entry : {prefix : bla , reach : bla , ...}  }
-/*this.from = from; // pour le moment contient juste ip  sans le mask
-this.id = id;
-this.iff = iff;
-this.installed = installed;
-this.metric = metric;
-this.prefix = prefix;
-this.refmetric = refmetric;
-this.via = via;*/
-
-    switch (message.tableId) {
+  function add(data){
+    switch (data.tableId) {
       case "neighbour":
-        var entry = message.tableId.entryId.entryData;
-        Neighbours[message.tableId.entryId]= new NeighbourEntry(entry.address,
-                                                              entry.cost,
-                                                              entry.iff,
-                                                              entry.reach,
-                                                              entry.rtt,
-                                                              entry.rttcost,
-                                                              entry.rxcost,
-                                                              entry.txcost);
-        break;
+        var entry = data.entryMap;
+        Neighbours[data.entryId]= new NeighbourEntry(entry.address,
+                                                     entry.cost,
+                                                     entry.iff,
+                                                     entry.reach,
+                                                     entry.rtt,
+                                                     entry.rttcost,
+                                                     entry.rxcost,
+                                                     entry.txcost);
+        nodes.push(new Node(entry.address));
+
+        insertNeighbour_html(entry.address,
+                            entry.cost,
+                            entry.iff,
+                            entry.reach,
+                            entry.rtt,
+                            entry.rttcost,
+                            entry.rxcost,
+                            entry.txcost);
+
+      console.log("test 1 : ");
+      console.log(Neighbours[data.entryId]);
+      break;
+
       case "route":
-        var entry = message.tableId.entryId.entryData;
-        Routes[message.tableId.entryId]= new RouteEntry(entry.from.Ip,
-                                                         entry.id,
-                                                         entry.iff,
-                                                         entry.installed,
-                                                         entry.metric,
-                                                         entry.prefix.Ip,
-                                                         entry.refmetric,
-                                                         entry.via);
+        var entry = data.entryMap;
+        if(entry.refmetric == 0)// est un voisin
+        Routes[data.entryId]= new RouteEntry(entry.from.Ip,
+                                             entry.id,
+                                             entry.iff,
+                                             entry.installed,
+                                             entry.metric,
+                                             entry.prefix.Ip,
+                                             entry.refmetric,
+                                             entry.via);
+        // if(nodes.includes(entry.via)== false)
+        //   nodes.push(new Node(entry.from.via));
+        //
+        // if(entry.refmetric == 0)// est un voisin
+        // {
+        //   links.push(new Link("center",entry.from.via));
+        // }
+        console.log("test 2 : ");
+        console.log(Routes[data.entryId]);
         break;
-      case "xroute": Xroutes.push(new XrouteEntry(message.tableId.entryId));
+
+      case "xroute": //TODO
         break;
-      case "interface":Interfaces.push(new InterfaceEntry(message.tableId.entryId));
+
+      case "interface": //TODO
         break;
 
       default:
     }
   }
 
-  function change(message){
-
+  function insertNeighbour_html(address, cost, iff, reach, rtt, rttcost, rxcost, txcost){
+    var arrayLignes = document.getElementById("neighbour");
+    var ligne = arrayLignes.insertRow(-1);
+    var colonne1 = ligne.insertCell(0);
+    colonne1.innerHTML += address;
+    var colonne2 = ligne.insertCell(1);
+    colonne2.innerHTML += iff;
+    var colonne3 = ligne.insertCell(2);
+    colonne3.innerHTML +=reach;
+    var colonne4 = ligne.insertCell(3);
+    colonne4.innerHTML += rxcost;
+    var colonne5 = ligne.insertCell(4);
+    colonne5.innerHTML +=txcost ;
+    var colonne6 = ligne.insertCell(5);
+    colonne6.innerHTML +=cost;
+    var colonne7 = ligne.insertCell(6);
+    colonne7.innerHTML +=rtt;
   }
 
-  function flush(message){
-
+  function change(message){//TODO
   }
-
+  function flush(message){//TODO
+  }
   function initGraph() {
+    /* Setup svg graph */
+    width = 600;
+    height = 400; /* display size */
+    vis = d3.select("#fig")
+      .insert("svg:svg", ".legend")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("stroke-width", "1.5px");
+    // force = d3.layout.force(); /* force to coerce nodes */
+    // force.charge(-1000); /* stronger repulsion enhances graph */
+    // force.on("tick", onTick);
+  }
+
+
+  function initGraph2() {
     var svg = d3.select("svg"),
             width = +svg.attr("width"),
             height = +svg.attr("height");
@@ -224,7 +228,7 @@ this.via = via;*/
             .selectAll("line")
             .data(links)
             .enter().append("line")
-            .attr("stroke-width", function(d) { return Math.sqrt(d.value); });
+            //.attr("stroke-width", function(d) { return Math.sqrt(d.value); });
 
     var node = svg.append("g")
             .attr("class", "nodes")
@@ -287,8 +291,16 @@ this.via = via;*/
 }
 
 
-
-
+// /*----   test graphe  ----*/
+//  nodes.push(new Node("Myriel",1));
+//  nodes.push(new Node("Napoleon",1));
+//  nodes.push(new Node("Mlle.Baptistine",1));
+//  nodes.push(new Node("Mme.Magloire", 1));
+//
+//  links.push(new Link("Napoleon","Myriel"));
+//  links.push(new Link("Mlle.Baptistine","Myriel"));
+//  links.push(new Link("Mme.Magloire","Myriel"));
+//  links.push(new Link("Mme.Magloire", "Mlle.Baptistine"));
 
 
 // var nodes = [
