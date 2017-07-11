@@ -9,18 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const port string = ":8080"
-const htmlPage = "static/index.html"
-
-/*const jsPage = "static/js/initialize.js"
-const cssPage = "static/css/style.css"
-const d3 = "static/js/d3/d3.js"*/
-
-const root = "static/"
-const jsPage = "static/js"
-const cssPage = "static/css/"
-const d3 = "static/js"
-
 const (
 	delete = iota
 	update = iota
