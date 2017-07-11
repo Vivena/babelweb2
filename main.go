@@ -9,22 +9,28 @@ import (
 	"net"
 	"net/http"
 	"sync"
+	"time"
 )
 
 const node = "[::1]:33123"
 
 func Connection(updates chan parser.BabelUpdate, node string) {
-	conn, err := net.Dial("tcp6", node)
-	if err != nil {
-		log.Println("node ", err)
-		return
-	}
-	defer conn.Close()
-	fmt.Fprintf(conn, "monitor\n")
-	r := bufio.NewReader(conn)
-	s := bufio.NewScanner(r)
 	for {
-		parser.Bd.Listen(s, updates)
+		func () {
+			conn, err := net.Dial("tcp6", node)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			defer conn.Close()
+			fmt.Fprintf(conn, "monitor\n")
+			r := bufio.NewReader(conn)
+			s := parser.NewScanner(r)
+			for {
+				parser.Bd.Listen(s, updates)
+			}
+		}()
+		time.Sleep(time.Second)
 	}
 }
 

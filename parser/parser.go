@@ -315,7 +315,20 @@ type SBabelUpdate struct {
 	Action    Id                 `json:"action"`
 	TableId   Id                 `json:"tableId"`
 	EntryId   Id                 `json:"entryId"`
-	EntryData map[Id]interface{} `json:"entryMap"`
+	EntryData map[Id]interface{} `json:"entryData"`
+}
+
+func (bd BabelDesc) Iter(f func (BabelUpdate) error) error {
+	for tk,tv := range bd {
+		for ek, ev := range tv.dict {
+			err := f(BabelUpdate{action: "add", tableId: tk,
+				entryId: ek, entry: ev})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
@@ -414,9 +427,13 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 }
 
-func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
-	defer close(updChan)
+func NewScanner(r *bufio.Reader) *bufio.Scanner {
+	s := bufio.NewScanner(r)
 	s.Split(split)
+	return s
+}
+
+func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
 	for {
 		upd, err := t.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
