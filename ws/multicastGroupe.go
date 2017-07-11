@@ -14,7 +14,7 @@ var globalClose = make(chan struct{})
 //Listener unique channel for each ws
 type Listener struct {
 	conduct chan parser.SBabelUpdate
-	quit    chan struct{}
+	//quit    chan struct{}
 }
 
 //WSMessage struc of messages sent by the ws to the clients
@@ -22,7 +22,7 @@ type Listener struct {
 //Init create a Listener
 func (l *Listener) Init() *Listener {
 	l.conduct = make(chan parser.SBabelUpdate)
-	l.quit = globalClose
+	//l.quit = globalClose
 	return l
 }
 

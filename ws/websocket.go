@@ -2,7 +2,6 @@ package ws
 
 import (
 	"babelweb2/parser"
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -42,8 +41,11 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 	for {
 		update, quit := <-updates
 		if quit == false {
-			log.Println("closing all chanels")
-			close(globalClose)
+			log.Println("closing all channels")
+			//close(globalClose)
+			g.Iter(func(l *Listener) {
+				close(l.conduct)
+			})
 			return
 		}
 		//lock()
@@ -96,26 +98,26 @@ func Handler(l *Listenergroupe) http.Handler {
 			select {
 			case lastUp := <-updates.conduct: //we got a new update on the chanel
 				log.Println("\n test")
-				j, jerr := json.Marshal(lastUp)
-				if err != nil {
-					log.Println(jerr)
-				}
-				test := Message{}
-				json.Unmarshal(j, &test)
+				// j, jerr := json.Marshal(lastUp)
+				// if err != nil {
+				// 	log.Println(jerr)
+				// }
+				// test := Message{}
+				// json.Unmarshal(j, &test)
 				log.Println("test1:", lastUp)
-				log.Println("test2:", string(j))
-				log.Println("test3:", test)
-
-				err := conn.WriteJSON(j)
+				// log.Println("test2:", string(j))
+				// log.Println("test3:", test)
+				log.Println("sending")
+				err := conn.WriteJSON(lastUp)
 				if err != nil {
 					log.Println(err)
 				}
 
-			case _, q := <-updates.quit:
-				if q == false {
-
-					return
-				}
+			// case _, q := <-updates.quit:
+			// 	if q == false {
+			//
+			// 		return
+			// 	}
 
 			case clientMessage, q := <-mess: //we got a message from the client
 				if q == false {
