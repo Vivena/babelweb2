@@ -19,12 +19,14 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+var Db dataBase
+
 //Message messages to send to the client via websocket
 type Message map[string]interface{}
 
 type dataBase struct {
 	sync.Mutex
-	bd parser.BabelDesc
+	Bd parser.BabelDesc
 }
 
 func weight(x int) int {
@@ -48,14 +50,13 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 		update, quit := <-updates
 		if quit == false {
 			log.Println("closing all channels")
-			//close(globalClose)
 			g.Iter(func(l *Listener) {
 				close(l.conduct)
 			})
 			return
 		}
-		//lock()
-		err := parser.Bd.Update(update)
+		//TODO lock()
+		err := Db.Bd.Update(update)
 		if err != nil {
 			log.Println(err)
 		}
@@ -63,7 +64,7 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 		g.Iter(func(l *Listener) {
 			l.conduct <- t
 		})
-		//unlock()
+		//TODO unlock()
 	}
 }
 
@@ -88,15 +89,13 @@ func HandleMessage(mess []byte) {
 //Handler manage the websockets
 func Handler(l *Listenergroupe) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		log.Println("bip")
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Could not create the socket.", err)
 			return
 		}
 		//TODO parcourt la base de donné et envois tout au client
-		err = parser.Bd.Iter(func(bu parser.BabelUpdate) error {
-			log.Println("bipbip")
+		err = Db.Bd.Iter(func(bu parser.BabelUpdate) error {
 			sbu := bu.ToS()
 			err := conn.WriteJSON(sbu)
 			if err != nil {
@@ -115,12 +114,9 @@ func Handler(l *Listenergroupe) http.Handler {
 			//we wait for a new message from the client or from our chanel
 			select {
 			case lastUp := <-updates.conduct: //we got a new update on the chanel
-				log.Println("\n test")
 
-				log.Println("test1:", lastUp)
-				// log.Println("test2:", string(j))
-				// log.Println("test3:", test)
-				log.Println("sending")
+				log.Println("sending:\n", lastUp)
+
 				err := conn.WriteJSON(lastUp)
 				if err != nil {
 					log.Println(err)

@@ -16,7 +16,7 @@ const node = "[::1]:33123"
 
 func Connection(updates chan parser.BabelUpdate, node string) {
 	for {
-		func () {
+		func() {
 			conn, err := net.Dial("tcp6", node)
 			if err != nil {
 				log.Println(err)
@@ -27,7 +27,7 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 			r := bufio.NewReader(conn)
 			s := parser.NewScanner(r)
 			for {
-				parser.Bd.Listen(s, updates)
+				ws.Db.Bd.Listen(s, updates)
 			}
 		}()
 		time.Sleep(time.Second)
@@ -38,9 +38,9 @@ func main() {
 	var wg sync.WaitGroup
 	wg.Add(2)
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
-	parser.Bd = parser.NewBabelDesc()
-	log.Println("test1")
+	ws.Db.Bd = parser.NewBabelDesc()
 	go Connection(updates, node)
+	log.Println("connection established")
 	bcastGrp := ws.NewListenerGroupe()
 	go ws.MCUpdates(updates, bcastGrp)
 	ws := ws.Handler(bcastGrp)
@@ -52,7 +52,10 @@ func main() {
 	http.Handle("/ws", ws)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
+
+		log.Println(err)
 		return
 	}
 	wg.Wait()
+	log.Println("ca va mal")
 }

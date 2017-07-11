@@ -9,7 +9,6 @@ import (
 	"strconv"
 )
 
-var Bd BabelDesc
 var errEOL = errors.New("EOL")
 var ErrUnterminatedString = errors.New("Unterminated String")
 
@@ -318,8 +317,8 @@ type SBabelUpdate struct {
 	EntryData map[Id]interface{} `json:"entryData"`
 }
 
-func (bd BabelDesc) Iter(f func (BabelUpdate) error) error {
-	for tk,tv := range bd {
+func (bd BabelDesc) Iter(f func(BabelUpdate) error) error {
+	for tk, tv := range bd {
 		for ek, ev := range tv.dict {
 			err := f(BabelUpdate{action: "add", tableId: tk,
 				entryId: ek, entry: ev})
