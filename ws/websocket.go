@@ -56,6 +56,9 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 			return
 		}
 		//TODO lock()
+		if !(Db.Bd.CheckUpdate(update)) {
+			continue
+		}
 		err := Db.Bd.Update(update)
 		if err != nil {
 			log.Println(err)

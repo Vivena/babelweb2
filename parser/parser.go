@@ -385,6 +385,21 @@ func (bd *BabelDesc) Update(upd BabelUpdate) error {
 	return nil
 }
 
+func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
+	if upd.action != Id("change") {
+		return true
+	}
+	//fmt.Println(upd)
+	for key, value := range (*bd)[Id(upd.tableId)].dict[Id(upd.entryId)] {
+		s1, s2 := fmt.Sprint((*upd.entry[key]).data),
+		fmt.Sprint((*value).data)
+		if s1 != s2 {
+			return true
+		}
+	}
+	return false
+}
+
 // This is not quite correct, since it doesn't deal with quoting with backslash.
 // Since babeld doesn't generate that yet, this doesn't matter much.
 func split(data []byte, atEOF bool) (advance int, token []byte, err error) {

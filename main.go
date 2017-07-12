@@ -20,9 +20,9 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 		if err != nil {
 			log.Println(err)
 			time.Sleep(time.Second)
+			conn.Close()
 			continue
 		}
-		defer conn.Close()
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
