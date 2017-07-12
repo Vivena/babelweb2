@@ -15,12 +15,13 @@ import (
 const node = "[::1]:33123"
 
 func Connection(updates chan parser.BabelUpdate, node string) {
+
+	//TODO remember to close the connection
 	for {
 		conn, err := net.Dial("tcp6", node)
 		if err != nil {
 			log.Println(err)
 			time.Sleep(time.Second)
-			conn.Close()
 			continue
 		}
 		fmt.Fprintf(conn, "monitor\n")
@@ -30,6 +31,7 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 			ws.Db.Bd.Listen(s, updates)
 		}
 	}
+
 }
 
 func main() {
