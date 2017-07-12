@@ -1,17 +1,17 @@
 /* ----       BabelWebV2          ----*/
 
 function BabelWebV2() {
-  /* ----    A propos de babel    ----*/
+  /* ----    Data base babel    ----*/
   var Routes = {};
   var Xroutes = {};
   var Neighbours ={};
   var Interfaces ={};
 
-  /*----   graphe    ----*/
-  var nodes = [];   //liste des noeuds du graphe
-  var links = [];   //les liens
+  /*----   Graph    ----*/
+  var nodes = [];   //Nodes of the graph
+  var links = [];
 
-/* ----    A propos de babel    ----*/
+/* ----    The structure of the data base    ----*/
 
   function NeighbourEntry(address, cost, iff, reach, rtt, rttcost, rxcost, txcost ) {
     this.address = address;
@@ -47,7 +47,7 @@ function BabelWebV2() {
     this.ipv6 = ipv6;
   }
 
-  /*----   graphe    ----*/
+  /*----   The structure of the graph    ----*/
   function Node(id ) {
     this.id = id;
   }
@@ -57,7 +57,7 @@ function BabelWebV2() {
           this.target = target;
   }
 
-  /*----   test graphe  ----*/
+  /*----   test graph  ----*/
   nodes.push(new Node("center"));
   nodes.push(new Node("test"));
   links.push(new Link("center","test"));
@@ -80,14 +80,12 @@ function BabelWebV2() {
     };
 
     socket.onopen = function(event) {
-        var elem = document.getElementById('state'); // À changer
-        elem.innerHTML = "Connected";
-        elem.style.backgroundColor = "green";
+        d3.selectAll("body").select("#state")
+        .text("Connected").style("background-color", "green");
 
         this.onclose = function(event) {
-          var elem = document.getElementById('state'); // À changer
-          elem.innerHTML = "Disconnected.";
-          elem.style.backgroundColor = "red";
+          d3.selectAll("body").select("#state")
+          .text("Disconnected").style("background-color", "red");
         };
 
         this.onmessage = function(event) {
@@ -103,11 +101,11 @@ function BabelWebV2() {
     console.log(data);
 
     switch (data.action) {
-      case "add": add(data);
+      case "add": //add(data);
         break;
-      case "change":add(data);
+      case "change"://add(data);
         break;
-      case "flush": flush(data);
+      case "flush": //flush(data);
         break;
       default:
     }
@@ -136,8 +134,8 @@ function BabelWebV2() {
                             entry.rxcost,
                             entry.txcost);
 
-      console.log("test 1 : ");
-      console.log(Neighbours[data.id]);
+      //console.log("test 1 : ");
+      //console.log(Neighbours[data.id]);
       break;
 
       case "route":
@@ -158,8 +156,8 @@ function BabelWebV2() {
         // {
         //   links.push(new Link("center",entry.from.via));
         // }
-        console.log("test 2 : ");
-        console.log(Routes[data.id]);
+      //  console.log("test 2 : ");
+        //console.log(Routes[data.id]);
         break;
 
       case "xroute": //TODO
