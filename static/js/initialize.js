@@ -1,6 +1,9 @@
 /* ----       BabelWebV2          ----*/
 
 function BabelWebV2() {
+  /*----   Global   ----*/
+
+
   /* ----    Data base babel    ----*/
   var Routes = {};
   var Xroutes = {};
@@ -35,16 +38,17 @@ function BabelWebV2() {
     this.via = via;
   }
 
-  function XrouteEntry(prefix, from,metric) {
-    this.prefix = prefix;
+  function XrouteEntry(from, metric,prefix) {
     this.from = from;
     this.metric = metric;
+    this.prefix = prefix;
   }
 
-  function InterfaceEntry(up, ipv4, ipv6) {
-    this.up = up;
+  function InterfaceEntry(ipv4, ipv6,up) {
     this.ipv4 = ipv4;
     this.ipv6 = ipv6;
+    this.up = up;
+
   }
 
   /*----   The structure of the graph    ----*/
@@ -101,20 +105,21 @@ function BabelWebV2() {
     console.log(data);
 
     switch (data.action) {
-      case "add": //add(data);
+      case "add": add(data);
         break;
-      case "change"://add(data);
+      case "change":change(data);
         break;
-      case "flush": //flush(data);
+      case "flush": flush(data);
         break;
       default:
     }
   }
 
   function add(data){
+    var entry = data.data;
+
     switch (data.table) {
       case "neighbour":
-        var entry = data.data;
         Neighbours[data.id]= new NeighbourEntry(entry.address,
                                                      entry.cost,
                                                      entry.if,
@@ -124,7 +129,6 @@ function BabelWebV2() {
                                                      entry.rxcost,
                                                      entry.txcost);
         nodes.push(new Node(entry.address));
-
         insertNeighbour_html(entry.address,
                             entry.cost,
                             entry.if,
@@ -132,15 +136,15 @@ function BabelWebV2() {
                             entry.rtt,
                             entry.rttcost,
                             entry.rxcost,
-                            entry.txcost);
+                            entry.txcost,
+                            data.id);
 
-      //console.log("test 1 : ");
+      //console.log("neighbour add : ");
       //console.log(Neighbours[data.id]);
       break;
 
       case "route":
-        var entry = data.data;
-        if(entry.refmetric == 0)// est un voisin
+        //if(entry.refmetric == 0)// est un voisin
         Routes[data.id]= new RouteEntry(entry.from.IP,
                                              entry.id,
                                              entry.if,
@@ -149,6 +153,8 @@ function BabelWebV2() {
                                              entry.prefix.IP,
                                              entry.refmetric,
                                              entry.via);
+        insertRoute_html(entry.prefix.IP, entry.metric, entry.refmetric,
+          entry.id, entry.via, entry.if, entry.installed,data.id);
         // if(nodes.includes(entry.via)== false)
         //   nodes.push(new Node(entry.from.via));
         //
@@ -156,23 +162,99 @@ function BabelWebV2() {
         // {
         //   links.push(new Link("center",entry.from.via));
         // }
-      //  console.log("test 2 : ");
-        //console.log(Routes[data.id]);
         break;
 
-      case "xroute": //TODO
+      case "xroute":insertXroute_html(entry.metric, entry.prefix.IP, data.id);
+        Xroutes[data.id]= new XrouteEntry(entry.from.IP,
+                                          entry.metric,
+                                          entry.prefix.IP);
+
         break;
 
-      case "interface": //TODO
+      case "interface":
+        Interfaces[data.id]= new InterfaceEntry(entry.ipv4,
+                                                entry.ipv6,
+                                                entry.up);
         break;
-
       default:
     }
   }
 
-  function insertNeighbour_html(address, cost, iff, reach, rtt, rttcost, rxcost, txcost){
+  function change(data){
+    var entry = data.data;
+
+    switch (data.table) {
+      case "neighbour":updateRowNeighbour(entry.address, entry.cost, entry.iff,
+        entry.reach, entry.rtt, entry.rttcost, entry.rxcost, entry.txcost,data.id);
+      break;
+      case "route":updateRowRoute(entry.prefix, entry.metric, entry.refmetric,
+        entry.id, entry.via, entry.if, entry.installed,data.id);
+        break;
+      case "xroute":updateRowXroute(entry.prefix.IP, entry.metric, data.id) ;
+        break;
+      case "interface":
+        break;
+      default:
+    }
+  }
+
+  function flush(data){
+    var entry = data.data;
+    switch (data.table) {
+      case "neighbour":deleteRow(data.id);
+      break;
+      case "route":deleteRow(data.id);
+        break;
+      case "xroute":deleteRow(data.id);
+        break;
+      case "interface":
+        break;
+      default:
+    }
+  }
+
+  function deleteRow(rowid)
+  {
+      var row = document.getElementById(rowid);
+      row.parentNode.removeChild(row);
+  }
+  function updateRowNeighbour(address, cost, iff, reach, rtt, rttcost, rxcost, txcost,id_row) {
+    var row = document.getElementById(id_row);
+    console.log(row);
+    row.cells[0].innerHTML = address;
+    row.cells[1].innerHTML = iff;
+    row.cells[2].innerHTML =reach;
+    row.cells[3].innerHTML = rxcost;
+    row.cells[4].innerHTML =txcost ;
+    row.cells[5].innerHTML =cost;
+    row.cells[6].innerHTML =rtt;
+  }
+  function updateRowRoute(prefix, metric, refmetric, id, via, iff, installed,id_row) {
+    var row = document.getElementById(id_row);
+    console.log(row);
+    row.cells[0].innerHTML = prefix;
+    row.cells[1].innerHTML = metric;
+    row.cells[2].innerHTML =refmetric;
+    row.cells[3].innerHTML = id;
+    row.cells[4].innerHTML =via ;
+    row.cells[5].innerHTML =iff;
+    row.cells[6].innerHTML =installed;
+  }
+  function updateRowXroute(prefix, metric, id_row) {
+    var row = document.getElementById(id_row);
+    console.log(row);
+    row.cells[0].innerHTML = prefix;
+    row.cells[1].innerHTML = metric;
+
+  }
+
+  function insertNeighbour_html(address, cost, iff, reach, rtt, rttcost, rxcost, txcost,id_row){
+
     var arrayLignes = document.getElementById("neighbour");
+
     var ligne = arrayLignes.insertRow(-1);
+    ligne.id = id_row;
+
     var colonne1 = ligne.insertCell(0);
     colonne1.innerHTML += address;
     var colonne2 = ligne.insertCell(1);
@@ -187,12 +269,44 @@ function BabelWebV2() {
     colonne6.innerHTML +=cost;
     var colonne7 = ligne.insertCell(6);
     colonne7.innerHTML +=rtt;
+    var colonne7 = ligne.insertCell(7);
+    colonne7.innerHTML +=id_row;
+  }
+    var get_key = function(d) { return d && d.key; };
+
+
+  function insertRoute_html(prefix, metric, refmetric, id, via, iff, installed,id_row){
+    var arrayLignes = document.getElementById("route");
+
+    var ligne = arrayLignes.insertRow(-1);
+    ligne.id = id_row;
+    var colonne1 = ligne.insertCell(0);
+    colonne1.innerHTML += prefix;
+    var colonne2 = ligne.insertCell(1);
+    colonne2.innerHTML += metric;
+    var colonne3 = ligne.insertCell(2);
+    colonne3.innerHTML +=refmetric;
+    var colonne4 = ligne.insertCell(3);
+    colonne4.innerHTML += id;
+    var colonne5 = ligne.insertCell(4);
+    colonne5.innerHTML +=via ;
+    var colonne6 = ligne.insertCell(5);
+    colonne6.innerHTML +=iff;
+    var colonne7 = ligne.insertCell(6);
+    colonne7.innerHTML +=installed;
+  }
+  function insertXroute_html(metric, prefix, id_row){
+    var arrayLignes = document.getElementById("xroute");
+
+    var ligne = arrayLignes.insertRow(-1);
+    ligne.id = id_row;
+    var colonne1 = ligne.insertCell(0);
+    colonne1.innerHTML += prefix;
+    var colonne2 = ligne.insertCell(1);
+    colonne2.innerHTML += metric;
+
   }
 
-  function change(message){//TODO
-  }
-  function flush(message){//TODO
-  }
   function initGraph() {
     /* Setup svg graph */
     width = 600;
