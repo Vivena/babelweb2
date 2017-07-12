@@ -391,7 +391,7 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 		return true
 	}
 	for key, value := range (*bd)[Id(upd.tableId)].dict[Id(upd.entryId)] {
-		if reflect.DeepEqual((*upd.entry[key]).data, (*value).data) {
+		if !(reflect.DeepEqual((*upd.entry[key]).data, (*value).data)) {
 			return true
 		}
 	}
