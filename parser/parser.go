@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"reflect"
 	"strconv"
 )
 
@@ -389,11 +390,8 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 	if upd.action != Id("change") {
 		return true
 	}
-	//fmt.Println(upd)
 	for key, value := range (*bd)[Id(upd.tableId)].dict[Id(upd.entryId)] {
-		s1, s2 := fmt.Sprint((*upd.entry[key]).data),
-		fmt.Sprint((*value).data)
-		if s1 != s2 {
+		if reflect.DeepEqual((*upd.entry[key]).data, (*value).data) {
 			return true
 		}
 	}
