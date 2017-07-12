@@ -48,7 +48,7 @@ func getEntries() {
 func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 	for {
 		update, quit := <-updates
-		if quit == false {
+		if !quit {
 			log.Println("closing all channels")
 			g.Iter(func(l *Listener) {
 				close(l.conduct)
@@ -111,9 +111,9 @@ func Handler(l *Listenergroupe) http.Handler {
 		mess := make(chan []byte, ChanelSize)
 		go GetMess(conn, mess)
 		for {
-			//we wait for a new message from the client or from our chanel
+			//we wait for a new message from the client or from our channel
 			select {
-			case lastUp := <-updates.conduct: //we got a new update on the chanel
+			case lastUp := <-updates.conduct: //we got a new update on the channel
 
 				log.Println("sending:\n", lastUp)
 
