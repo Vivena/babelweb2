@@ -114,12 +114,12 @@ function BabelWebV2() {
   }
 
   function add(data){
-    switch (data.tableId) {
+    switch (data.table) {
       case "neighbour":
-        var entry = data.entryMap;
-        Neighbours[data.entryId]= new NeighbourEntry(entry.address,
+        var entry = data.data;
+        Neighbours[data.id]= new NeighbourEntry(entry.address,
                                                      entry.cost,
-                                                     entry.iff,
+                                                     entry.if,
                                                      entry.reach,
                                                      entry.rtt,
                                                      entry.rttcost,
@@ -129,7 +129,7 @@ function BabelWebV2() {
 
         insertNeighbour_html(entry.address,
                             entry.cost,
-                            entry.iff,
+                            entry.if,
                             entry.reach,
                             entry.rtt,
                             entry.rttcost,
@@ -137,18 +137,18 @@ function BabelWebV2() {
                             entry.txcost);
 
       console.log("test 1 : ");
-      console.log(Neighbours[data.entryId]);
+      console.log(Neighbours[data.id]);
       break;
 
       case "route":
-        var entry = data.entryMap;
+        var entry = data.data;
         if(entry.refmetric == 0)// est un voisin
-        Routes[data.entryId]= new RouteEntry(entry.from.Ip,
+        Routes[data.id]= new RouteEntry(entry.from.IP,
                                              entry.id,
-                                             entry.iff,
+                                             entry.if,
                                              entry.installed,
                                              entry.metric,
-                                             entry.prefix.Ip,
+                                             entry.prefix.IP,
                                              entry.refmetric,
                                              entry.via);
         // if(nodes.includes(entry.via)== false)
@@ -159,7 +159,7 @@ function BabelWebV2() {
         //   links.push(new Link("center",entry.from.via));
         // }
         console.log("test 2 : ");
-        console.log(Routes[data.entryId]);
+        console.log(Routes[data.id]);
         break;
 
       case "xroute": //TODO
