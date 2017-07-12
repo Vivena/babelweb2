@@ -16,21 +16,19 @@ const node = "[::1]:33123"
 
 func Connection(updates chan parser.BabelUpdate, node string) {
 	for {
-		func() {
-			conn, err := net.Dial("tcp6", node)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			defer conn.Close()
-			fmt.Fprintf(conn, "monitor\n")
-			r := bufio.NewReader(conn)
-			s := parser.NewScanner(r)
-			for {
-				ws.Db.Bd.Listen(s, updates)
-			}
-		}()
-		time.Sleep(time.Second)
+		conn, err := net.Dial("tcp6", node)
+		if err != nil {
+			log.Println(err)
+			time.Sleep(time.Second)
+			continue
+		}
+		defer conn.Close()
+		fmt.Fprintf(conn, "monitor\n")
+		r := bufio.NewReader(conn)
+		s := parser.NewScanner(r)
+		for {
+			ws.Db.Bd.Listen(s, updates)
+		}
 	}
 }
 

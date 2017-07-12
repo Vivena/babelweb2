@@ -312,9 +312,9 @@ type BabelUpdate struct {
 
 type SBabelUpdate struct {
 	Action    Id                 `json:"action"`
-	TableId   Id                 `json:"tableId"`
-	EntryId   Id                 `json:"entryId"`
-	EntryData map[Id]interface{} `json:"entryData"`
+	TableId   Id                 `json:"table"`
+	EntryId   Id                 `json:"id"`
+	EntryData map[Id]interface{} `json:"data"`
 }
 
 func (bd BabelDesc) Iter(f func(BabelUpdate) error) error {
