@@ -1,9 +1,6 @@
-/* ----       BabelWebV2          ----*/
+/* ----       BabelWeb.2          ----*/
 
 function BabelWebV2() {
-  /*----   Global   ----*/
-
-
   /* ----    Data base babel    ----*/
   var Routes = {};
   var Xroutes = {};
@@ -116,7 +113,6 @@ function BabelWebV2() {
 
   function add(data){
     var entry = data.data;
-
     switch (data.table) {
       case "neighbour":
         Neighbours[data.id]= new NeighbourEntry(entry.address,
@@ -127,8 +123,8 @@ function BabelWebV2() {
                                                      entry.rttcost,
                                                      entry.rxcost,
                                                      entry.txcost);
-        nodes.push(new Node(entry.address));
-        insertNeighbour_html(entry.address,
+       nodes.push(new Node(entry.address));
+       insertNeighbour_html(entry.address,
                             entry.cost,
                             entry.if,
                             entry.reach,
@@ -137,13 +133,8 @@ function BabelWebV2() {
                             entry.rxcost,
                             entry.txcost,
                             data.id);
-
-      //console.log("neighbour add : ");
-      //console.log(Neighbours[data.id]);
       break;
-
       case "route":
-        //if(entry.refmetric == 0)// est un voisin
         Routes[data.id]= new RouteEntry(entry.from.IP,
                                              entry.id,
                                              entry.if,
@@ -156,20 +147,16 @@ function BabelWebV2() {
           entry.id, entry.via, entry.if, entry.installed,data.id);
         // if(nodes.includes(entry.via)== false)
         //   nodes.push(new Node(entry.from.via));
-        //
         // if(entry.refmetric == 0)// est un voisin
         // {
         //   links.push(new Link("center",entry.from.via));
         // }
         break;
-
       case "xroute":insertXroute_html(entry.metric, entry.prefix.IP, data.id);
         Xroutes[data.id]= new XrouteEntry(entry.from.IP,
                                           entry.metric,
                                           entry.prefix.IP);
-
         break;
-
       case "interface":
         Interfaces[data.id]= new InterfaceEntry(entry.ipv4,
                                                 entry.ipv6,
@@ -183,9 +170,9 @@ function BabelWebV2() {
     var entry = data.data;
 
     switch (data.table) {
-      case "neighbour":updateRowNeighbour(entry.address, entry.cost, entry.iff,
+      case "neighbour":updateRowNeighbour(entry.address, entry.cost, entry.if,
         entry.reach, entry.rtt, entry.rttcost, entry.rxcost, entry.txcost,data.id);
-      break;
+        break;
       case "route":updateRowRoute(entry.prefix.IP, entry.metric, entry.refmetric,
         entry.id, entry.via, entry.if, entry.installed,data.id);
         break;
@@ -201,7 +188,7 @@ function BabelWebV2() {
     var entry = data.data;
     switch (data.table) {
       case "neighbour":deleteRow(data.id);
-      break;
+        break;
       case "route":deleteRow(data.id);
         break;
       case "xroute":deleteRow(data.id);
@@ -217,8 +204,46 @@ function BabelWebV2() {
       var row = document.getElementById(rowid);
       row.parentNode.removeChild(row);
   }
+
+  /* Colors */
+  var palette = {
+    "gray" : "#777"
+  , "lightGray" : "#ddd"
+  , "blue" : "#03f"
+  , "violet" : "#c0f"
+  , "pink" : "#f69"
+  , "green" : "#4d4"
+  , "lightGreen" : "#8e8"
+  , "yellow" : "#ff0"
+  , "orange" : "#f18973"
+  , "red" : "#f30"
+};
+  var colors = {
+      installed: palette.green
+        , uninstalled: palette.lightGreen
+        , unreachable: palette.lightGray
+        , wiredLink: palette.yellow
+        , losslessWireless: palette.orange
+        , unreachableNeighbour: palette.red
+        , current: palette.pink
+        , neighbour: palette.violet
+        , other: palette.blue
+        , selected: palette.blue
+        , route: palette.gray
+    };
+
+
   function updateRowNeighbour(address, cost, iff, reach, rtt, rttcost, rxcost, txcost,id_row) {
     var row = document.getElementById(id_row);
+    console.log(parseInt(cost));
+
+    if(parseInt(cost) <= 96)
+      row.style.background =  colors.wiredLink;
+      else if(parseInt(cost) <= 256)
+        row.style.background =  colors.losslessWireless;
+        else
+        row.style.background =  colors.unreachable;
+
     console.log(row);
     row.cells[0].innerHTML = address;
     row.cells[1].innerHTML = iff;
@@ -230,6 +255,13 @@ function BabelWebV2() {
   }
   function updateRowRoute(prefix, metric, refmetric, id, via, iff, installed,id_row) {
     var row = document.getElementById(id_row);
+    if(parseInt(metric) >= 65535)
+      row.style.background =  colors.unreachable;
+      else if(installed == true)
+      row.style.background =  colors.installed;
+        else if(installed == false)
+          row.style.background =  colors.uninstalled;
+
     console.log(row);
     row.cells[0].innerHTML = prefix;
     row.cells[1].innerHTML = metric;
@@ -244,40 +276,53 @@ function BabelWebV2() {
     console.log(row);
     row.cells[0].innerHTML = prefix;
     row.cells[1].innerHTML = metric;
-
   }
 
   function insertNeighbour_html(address, cost, iff, reach, rtt, rttcost, rxcost, txcost,id_row){
-
+    if(document.getElementById("loading")!= null)
+      deleteRow("loading");
     var arrayLignes = document.getElementById("neighbour");
+    var row = arrayLignes.insertRow(-1);
 
-    var ligne = arrayLignes.insertRow(-1);
-    ligne.id = id_row;
+    if(parseInt(cost) <= 96)
+      row.style.background =  colors.wiredLink;
+      else if(parseInt(cost) <= 256)
+        row.style.background =  colors.losslessWireless;
+        else
+        row.style.background =  colors.unreachable;
 
-    var colonne1 = ligne.insertCell(0);
+    row.id = id_row;
+    var colonne1 = row.insertCell(0);
     colonne1.innerHTML += address;
-    var colonne2 = ligne.insertCell(1);
+    var colonne2 = row.insertCell(1);
     colonne2.innerHTML += iff;
-    var colonne3 = ligne.insertCell(2);
+    var colonne3 = row.insertCell(2);
     colonne3.innerHTML +=reach;
-    var colonne4 = ligne.insertCell(3);
+    var colonne4 = row.insertCell(3);
     colonne4.innerHTML += rxcost;
-    var colonne5 = ligne.insertCell(4);
+    var colonne5 = row.insertCell(4);
     colonne5.innerHTML +=txcost ;
-    var colonne6 = ligne.insertCell(5);
+    var colonne6 = row.insertCell(5);
     colonne6.innerHTML +=cost;
-    var colonne7 = ligne.insertCell(6);
+    var colonne7 = row.insertCell(6);
     colonne7.innerHTML +=rtt;
-    var colonne7 = ligne.insertCell(7);
-    colonne7.innerHTML +=id_row;
-  }
-    var get_key = function(d) { return d && d.key; };
 
+  }
 
   function insertRoute_html(prefix, metric, refmetric, id, via, iff, installed,id_row){
-    var arrayLignes = document.getElementById("route");
+    if(document.getElementById("loading")!= null)
+    deleteRow("loading");
 
+    var arrayLignes = document.getElementById("route");
     var ligne = arrayLignes.insertRow(-1);
+
+    if(parseInt(metric) >= 65535)
+      ligne.style.background =  colors.unreachable;
+      else if(installed == true)
+      ligne.style.background =  colors.installed;
+        else if(installed == false)
+          ligne.style.background =  colors.uninstalled;
+
     ligne.id = id_row;
     var colonne1 = ligne.insertCell(0);
     colonne1.innerHTML += prefix;
@@ -294,16 +339,18 @@ function BabelWebV2() {
     var colonne7 = ligne.insertCell(6);
     colonne7.innerHTML +=installed;
   }
-  function insertXroute_html(metric, prefix, id_row){
-    var arrayLignes = document.getElementById("xroute");
 
+  function insertXroute_html(metric, prefix, id_row){
+    if(document.getElementById("loading")!= null)
+    deleteRow("loading");
+
+    var arrayLignes = document.getElementById("xroute");
     var ligne = arrayLignes.insertRow(-1);
     ligne.id = id_row;
     var colonne1 = ligne.insertCell(0);
     colonne1.innerHTML += prefix;
     var colonne2 = ligne.insertCell(1);
     colonne2.innerHTML += metric;
-
   }
 
   function initGraph() {
