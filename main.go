@@ -27,11 +27,12 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
-		for {
-			ws.Db.Bd.Listen(s, updates)
+		err = ws.Db.Bd.Listen(s, updates)
+		if err != nil {
+			log.Println(err)
+			return
 		}
 	}
-
 }
 
 func main() {
@@ -52,7 +53,6 @@ func main() {
 	http.Handle("/ws", ws)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-
 		log.Println(err)
 		return
 	}

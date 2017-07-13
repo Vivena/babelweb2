@@ -127,11 +127,11 @@ func NewNeighbourEntry() Entry {
 	i.AddField("address", ParseIp)
 	i.AddField("if", ParseString)
 	i.AddField("reach", GetUintParser(16, 16))
-	i.AddField("rxcost", GetUintParser(10, 16))
-	i.AddField("txcost", GetUintParser(10, 16))
-	i.AddField("cost", GetUintParser(10, 16))
+	i.AddField("rxcost", GetUintParser(10, 32))
+	i.AddField("txcost", GetUintParser(10, 32))
+	i.AddField("cost", GetUintParser(10, 32))
 	i.AddField("rtt", ParseString)
-	i.AddField("rttcost", GetUintParser(10, 16))
+	i.AddField("rttcost", GetUintParser(10, 32))
 	return i
 }
 
@@ -141,8 +141,8 @@ func NewRouteEntry() Entry {
 	i.AddField("from", ParsePrefix)
 	i.AddField("installed", ParseBool)
 	i.AddField("id", ParseString)
-	i.AddField("metric", GetIntParser(10, 16))
-	i.AddField("refmetric", GetUintParser(10, 16))
+	i.AddField("metric", GetIntParser(10, 32))
+	i.AddField("refmetric", GetUintParser(10, 32))
 	i.AddField("via", ParseIp)
 	i.AddField("if", ParseString)
 	return i
@@ -152,7 +152,7 @@ func NewXrouteEntry() Entry {
 	i := NewEntry()
 	i.AddField("prefix", ParsePrefix)
 	i.AddField("from", ParsePrefix)
-	i.AddField("metric", GetUintParser(10, 16))
+	i.AddField("metric", GetUintParser(10, 32))
 	return i
 }
 
