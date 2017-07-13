@@ -48,7 +48,6 @@ function BabelWebV2() {
     this.ipv4 = ipv4;
     this.ipv6 = ipv6;
     this.up = up;
-
   }
 
   /*----   The structure of the graph    ----*/
@@ -187,7 +186,7 @@ function BabelWebV2() {
       case "neighbour":updateRowNeighbour(entry.address, entry.cost, entry.iff,
         entry.reach, entry.rtt, entry.rttcost, entry.rxcost, entry.txcost,data.id);
       break;
-      case "route":updateRowRoute(entry.prefix, entry.metric, entry.refmetric,
+      case "route":updateRowRoute(entry.prefix.IP, entry.metric, entry.refmetric,
         entry.id, entry.via, entry.if, entry.installed,data.id);
         break;
       case "xroute":updateRowXroute(entry.prefix.IP, entry.metric, data.id) ;
