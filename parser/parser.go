@@ -156,14 +156,6 @@ func NewXrouteEntry() Entry {
 	return i
 }
 
-type ParsErr int
-
-func (e ParsErr) Error() string {
-	return "Syntax Error"
-}
-
-const SyntaxError ParsErr = 0
-
 // string
 func ParseString(s *bufio.Scanner) (interface{}, error) {
 	return nextWord(s)
@@ -182,7 +174,7 @@ func ParseBool(s *bufio.Scanner) (interface{}, error) {
 		w == "nie" || w == "нет" {
 		return false, nil
 	}
-	return nil, SyntaxError
+	return nil, errors.New("Syntax Error: '" + w + "' must be a boolean")
 }
 
 // int64
@@ -223,7 +215,7 @@ func ParseIp(s *bufio.Scanner) (interface{}, error) {
 	}
 	ip := net.ParseIP(w)
 	if ip == nil {
-		return nil, SyntaxError
+		return nil, errors.New("Syntax Error: invalid IP address: " + w)
 	}
 	return ip, nil
 }
@@ -236,7 +228,7 @@ func ParsePrefix(s *bufio.Scanner) (interface{}, error) {
 	}
 	_, ip, err := net.ParseCIDR(w)
 	if err != nil {
-		return nil, SyntaxError
+		return nil, errors.New("Syntax Error: " + err.Error())
 	}
 	return ip, nil
 }
@@ -439,7 +431,7 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 
 }
 
-func NewScanner(r *bufio.Reader) *bufio.Scanner {
+func NewScanner(r io.Reader) *bufio.Scanner {
 	s := bufio.NewScanner(r)
 	s.Split(split)
 	return s
