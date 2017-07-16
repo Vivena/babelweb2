@@ -169,3 +169,35 @@ func (upd BabelUpdate)lequal(reader *bufio.Reader, t *testing.T,
 		}
 	}
 }
+
+func TestNextWord(t *testing.T) {
+	input := "  Lorem ipsum dolor sit amet. Neighbour   55c47b990d90 " +
+		"172.28.175.26/32-::/0\n" +
+		"\"Now I have a machine gun. Ho-ho-ho.\""
+	expect := []struct {
+		word string
+		err error
+	}{
+		{"Lorem", nil},
+		{"ipsum", nil},
+		{"dolor", nil},
+		{"sit", nil},
+		{"amet.", nil},
+		{"Neighbour", nil},
+		{"55c47b990d90", nil},
+		{"172.28.175.26/32-::/0", nil},
+		{"", errEOL},
+		{"Now I have a machine gun. Ho-ho-ho.", nil},
+		{"", io.EOF},
+		{"", io.EOF},
+	}
+	r := strings.NewReader(input)
+	s := NewScanner(r)
+	for _, e := range expect {
+		word, err := nextWord(s)
+		if word != e.word || err != e.err {
+			t.Errorf("nextWord(%v):\nexpected: (%v, %v)\ngot: " +
+				"(%v, %v)", input, e.word, e.err, word, err)
+		}
+	}
+}
