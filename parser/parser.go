@@ -390,9 +390,7 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 	return false
 }
 
-// This is not quite correct, since it doesn't deal with quoting with backslash.
-// Since babeld doesn't generate that yet, this doesn't matter much.
-func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
+func split(data []byte, atEOF bool) (int, []byte, error) {
 	start := 0
 	for start < len(data) && (data[start] == ' ' || data[start] == '\r') {
 		start++
@@ -401,34 +399,72 @@ func split(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	if start < len(data) && data[start] == '\n' {
 		return start + 1, []byte{'\n'}, nil
 	}
-	if start < len(data) && data[start] == '"' {
-		i := start + 1
+
+	split_quotes := func(start int) (int, []byte, error) {
+		start++
+		i := start
+		token := ""
+		b := false
 		for i < len(data) && data[i] != '"' {
-			i++
+			if i < len(data)-1 && data[i] == '\\' &&
+				data[i+1] == '"' {
+				token += (string(data[start:i]) + "\"")
+				i += 2
+				start = i
+				b = true
+			} else {
+				i++
+				b = false
+			}
 		}
+
 		if i < len(data) {
-			return i + 1, data[start+1 : i], nil
+			if b {
+				return i + 1, []byte(token), nil
+			}
+			token += string(data[start:i])
+			return i + 1, []byte(token), nil
 		}
-		if atEOF {
-			return 0, nil, ErrUnterminatedString
-		}
-		return start, nil, nil
+		return 0, nil, ErrUnterminatedString
 	}
 	i := start
+	token := ""
+	b := false
 	for i < len(data) && data[i] != ' ' && data[i] != '\r' &&
 		data[i] != '\n' {
-		i++
-	}
-	if i < len(data) {
-		return i, data[start:i], nil
+		if i < len(data)-1 && data[i] == '\\' && data[i+1] == '"' {
+			token += "\""
+			i += 2
+			start = i
+		} else if i < len(data) && data[i] == '"' {
+			token += string(data[start:i])
+			n, quotok, err := split_quotes(i)
+			b = true
+			if err != nil {
+				return n, quotok, err
+			}
+			token += string(quotok)
+			i = n
+			start = i
+		} else {
+			i++
+			b = false
+		}
 	}
 
+	if b {
+		return i, []byte(token), nil
+	}
+	if i < len(data) {
+		token += string(data[start:i])
+		return i, []byte(token), nil
+	}
 	if atEOF && start < len(data) {
-		return len(data), data[start:], nil
+		token += string(data[start:])
+		return len(data), []byte(token), nil
 	}
 
 	return start, nil, nil
-
 }
 
 func NewScanner(r io.Reader) *bufio.Scanner {

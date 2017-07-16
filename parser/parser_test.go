@@ -10,7 +10,6 @@ import (
 	"testing"
 )
 
-
 // Simple test of lexical coherence.
 // `TestListen` produces set of updates from the file and for each such
 // update tests lexical equality with corresponding line of the source.
@@ -37,17 +36,17 @@ func TestListen(t *testing.T) {
 		t.Fatal("os.Open:\n", err)
 	}
 	reader := bufio.NewReader(r2)
-	fieldStringHook := make(map[string] (func(interface{}) string))
-	fieldStringHook["neighbour_reach"] = func (v interface{}) string {
+	fieldStringHook := make(map[string](func(interface{}) string))
+	fieldStringHook["neighbour_reach"] = func(v interface{}) string {
 		return fmt.Sprintf("%04x", v)
 	}
-	fieldStringHook["route_installed"] = func (v interface{}) string {
+	fieldStringHook["route_installed"] = func(v interface{}) string {
 		if b := v.(bool); b {
 			return "yes"
 		}
 		return "no"
 	}
-	for upd := range updChan {	
+	for upd := range updChan {
 		upd.lequal(reader, t, fieldStringHook)
 		if testing.Verbose() {
 			fmt.Print(upd)
@@ -59,15 +58,14 @@ func TestListen(t *testing.T) {
 	}
 }
 
-
 // Lexical comparison of the given update with next valid line from `reader`.
 // `fieldStringHook` associates entry field with 'toString-like' function.
 // `lequal` uses `nextWord`, which must be tested separately.
 // `lequal` is ugly and slow, but really simple
 // (otherwise we need to test our test)
 
-func (upd BabelUpdate)lequal(reader *bufio.Reader, t *testing.T,
-	fieldStringHook map[string] (func(interface{}) string)) {
+func (upd BabelUpdate) lequal(reader *bufio.Reader, t *testing.T,
+	fieldStringHook map[string](func(interface{}) string)) {
 	for {
 		nextLine, err := reader.ReadString('\n')
 		if err != nil {
@@ -83,7 +81,7 @@ func (upd BabelUpdate)lequal(reader *bufio.Reader, t *testing.T,
 			return
 		}
 		line := w
-		
+
 		// In general, it's not an error,
 		// but if it is, we need to be sure to track it.
 		if w != string(upd.action) {
@@ -153,8 +151,8 @@ func (upd BabelUpdate)lequal(reader *bufio.Reader, t *testing.T,
 				return
 			}
 			line += (" " + w2)
-			hook, exists := fieldStringHook[string(upd.tableId) +
-				"_" + w]
+			hook, exists := fieldStringHook[string(upd.tableId)+
+				"_"+w]
 			var given string
 			if exists {
 				given = hook(value.data)
@@ -173,10 +171,17 @@ func (upd BabelUpdate)lequal(reader *bufio.Reader, t *testing.T,
 func TestNextWord(t *testing.T) {
 	input := "  Lorem ipsum dolor sit amet. Neighbour   55c47b990d90 " +
 		"172.28.175.26/32-::/0\n" +
-		"\"Now I have a machine gun. Ho-ho-ho.\""
+		"\"Now I have a machine gun. Ho-ho-ho.\"" + " \"\" " +
+		"\"Who You Gonna Call?\nGhostbusters!\"" +
+		" \"I have a bad feeling about t\"h\"is\" " +
+		"\"Well, I called me wife and I said to her:\"" +
+		"\"\\\"Will you kindly tell to me\n" +
+		"Who owns that head upon the bed " +
+		"where my old head should be?\\\"\"" +
+		"\n\\\"A\" Spoonful of \"\"Sugar\"\\\""
 	expect := []struct {
 		word string
-		err error
+		err  error
 	}{
 		{"Lorem", nil},
 		{"ipsum", nil},
@@ -188,6 +193,15 @@ func TestNextWord(t *testing.T) {
 		{"172.28.175.26/32-::/0", nil},
 		{"", errEOL},
 		{"Now I have a machine gun. Ho-ho-ho.", nil},
+		{"", nil},
+		{"Who You Gonna Call?\nGhostbusters!", nil},
+		{"I have a bad feeling about this", nil},
+		{"Well, I called me wife and I said to her:" +
+			"\"Will you kindly tell to me\n" +
+			"Who owns that head upon the bed " +
+			"where my old head should be?\"", nil},
+		{"", errEOL},
+		{"\"A Spoonful of Sugar\"", nil},
 		{"", io.EOF},
 		{"", io.EOF},
 	}
@@ -196,8 +210,8 @@ func TestNextWord(t *testing.T) {
 	for _, e := range expect {
 		word, err := nextWord(s)
 		if word != e.word || err != e.err {
-			t.Errorf("nextWord(%v):\nexpected: (%v, %v)\ngot: " +
-				"(%v, %v)", input, e.word, e.err, word, err)
+			t.Errorf("nextWord:\nexpected: (%v, %v)\ngot: "+
+				"(%v, %v)", e.word, e.err, word, err)
 		}
 	}
 }
