@@ -13,7 +13,11 @@ import (
 var errEOL = errors.New("EOL")
 var ErrUnterminatedString = errors.New("Unterminated String")
 
-func nextWord(s *bufio.Scanner) (string, error) {
+type Scanner struct {
+	bufio.Scanner
+}
+
+func nextWord(s *Scanner) (string, error) {
 	more := s.Scan()
 	if more {
 		if s.Text() == "\n" {
@@ -31,7 +35,7 @@ func nextWord(s *bufio.Scanner) (string, error) {
 
 type Id string
 
-type EntryParser func(*bufio.Scanner) (interface{}, error)
+type EntryParser func(*Scanner) (interface{}, error)
 
 type EntryValue struct {
 	data   interface{}
@@ -88,7 +92,7 @@ func (e *Entry) GetData(id Id) (interface{}, error) {
 	return value.data, nil
 }
 
-func (e *Entry) Parse(s *bufio.Scanner) error {
+func (e *Entry) Parse(s *Scanner) error {
 	for {
 		w, err := nextWord(s)
 		if err != nil {
@@ -157,12 +161,12 @@ func NewXrouteEntry() Entry {
 }
 
 // string
-func ParseString(s *bufio.Scanner) (interface{}, error) {
+func ParseString(s *Scanner) (interface{}, error) {
 	return nextWord(s)
 }
 
 // bool
-func ParseBool(s *bufio.Scanner) (interface{}, error) {
+func ParseBool(s *Scanner) (interface{}, error) {
 	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
@@ -179,7 +183,7 @@ func ParseBool(s *bufio.Scanner) (interface{}, error) {
 
 // int64
 func GetIntParser(base int, bitSize int) EntryParser {
-	return func(s *bufio.Scanner) (interface{}, error) {
+	return func(s *Scanner) (interface{}, error) {
 		w, err := nextWord(s)
 		if err != nil {
 			return nil, err
@@ -194,7 +198,7 @@ func GetIntParser(base int, bitSize int) EntryParser {
 
 // uint64
 func GetUintParser(base int, bitSize int) EntryParser {
-	return func(s *bufio.Scanner) (interface{}, error) {
+	return func(s *Scanner) (interface{}, error) {
 		w, err := nextWord(s)
 		if err != nil {
 			return nil, err
@@ -208,7 +212,7 @@ func GetUintParser(base int, bitSize int) EntryParser {
 }
 
 // net.IP
-func ParseIp(s *bufio.Scanner) (interface{}, error) {
+func ParseIp(s *Scanner) (interface{}, error) {
 	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
@@ -221,7 +225,7 @@ func ParseIp(s *bufio.Scanner) (interface{}, error) {
 }
 
 // *net.IPNet
-func ParsePrefix(s *bufio.Scanner) (interface{}, error) {
+func ParsePrefix(s *Scanner) (interface{}, error) {
 	w, err := nextWord(s)
 	if err != nil {
 		return nil, err
@@ -340,7 +344,7 @@ func (upd BabelUpdate) String() string {
 
 }
 
-func (bd *BabelDesc) ParseAction(s *bufio.Scanner) (BabelUpdate, error) {
+func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
 	w, err := nextWord(s)
 	if err != nil {
 		return emptyUpdate, err
@@ -467,13 +471,13 @@ func split(data []byte, atEOF bool) (int, []byte, error) {
 	return start, nil, nil
 }
 
-func NewScanner(r io.Reader) *bufio.Scanner {
+func NewScanner(r io.Reader) *Scanner {
 	s := bufio.NewScanner(r)
 	s.Split(split)
-	return s
+	return &Scanner{*s}
 }
 
-func (t *BabelDesc) Listen(s *bufio.Scanner, updChan chan BabelUpdate) error {
+func (t *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	for {
 		upd, err := t.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
