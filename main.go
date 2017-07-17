@@ -26,9 +26,10 @@ func flagsInit(node *string, bwPort *string) {
 	*bwPort = ":" + tempPort
 }
 
-func Connection(updates chan parser.BabelUpdate, node string) {
+func Connection(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup) {
 	var conn net.Conn
 	var err error
+	wg.Add(1)
 	for {
 		log.Println("	Trying ", node)
 		for {
@@ -49,8 +50,10 @@ func Connection(updates chan parser.BabelUpdate, node string) {
 		log.Println("Connection closed")
 		if err != nil {
 			log.Println(err)
+			wg.Done()
 			return
 		}
+		wg.Done()
 	}
 }
 
@@ -60,13 +63,12 @@ func main() {
 	var bwPort string
 	flagsInit(&node, &bwPort)
 	var wg sync.WaitGroup
-	wg.Add(2)
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	ws.Db.Bd = parser.NewBabelDesc()
 	log.Println("connection to initial node:")
-	go Connection(updates, node)
+	go Connection(updates, node, &wg)
 	bcastGrp := ws.NewListenerGroupe()
-	go ws.MCUpdates(updates, bcastGrp)
+	go ws.MCUpdates(updates, bcastGrp, &wg)
 	ws := ws.Handler(bcastGrp)
 	http.Handle("/", http.FileServer(http.Dir("static/")))
 	http.Handle("/style.css", http.FileServer(http.Dir("static/css/")))

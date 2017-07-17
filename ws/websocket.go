@@ -29,16 +29,10 @@ type dataBase struct {
 	Bd parser.BabelDesc
 }
 
-/*-----------------------------------------------------------------*/
-
-func getEntries() {
-
-}
-
-/*-----------------------------------------------------------------*/
-
 //MCUpdates multicast updates sent by the routine comminicating with the routers
-func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
+func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe,
+	wg *sync.WaitGroup) {
+	wg.Add(1)
 	for {
 		update, quit := <-updates
 		if !quit {
@@ -46,16 +40,18 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe) {
 			g.Iter(func(l *Listener) {
 				close(l.conduct)
 			})
+			wg.Done()
 			return
 		}
-		//TODO lock()
 		if !(Db.Bd.CheckUpdate(update)) {
 			continue
 		}
+		Db.Lock()
 		err := Db.Bd.Update(update)
 		if err != nil {
 			log.Println(err)
 		}
+		Db.Unlock()
 		t := update.ToS()
 		g.Iter(func(l *Listener) {
 			l.conduct <- t
@@ -90,8 +86,9 @@ func Handler(l *Listenergroupe) http.Handler {
 			log.Println("Could not create the socket.", err)
 			return
 		}
-		//TODO parcourt la base de donné et envois tout au client
-		err = Db.Bd.Iter(func(bu parser.BabelUpdate) error {
+
+		Db.Lock()
+		Db.Bd.Iter(func(bu parser.BabelUpdate) error {
 			sbu := bu.ToS()
 			err := conn.WriteJSON(sbu)
 			if err != nil {
@@ -99,6 +96,7 @@ func Handler(l *Listenergroupe) http.Handler {
 			}
 			return err
 		})
+		Db.Unlock()
 
 		log.Println("New connection to a websocket")
 		updates := NewListener()
