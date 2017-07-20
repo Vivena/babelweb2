@@ -54,6 +54,14 @@ func Connection(updates chan parser.BabelUpdate, node string,
 			wg.Done()
 			return
 		}
+		ws.Db.Lock()
+		err = ws.Db.Bd.Clean(updates)
+		ws.Db.Unlock()
+		if err != nil {
+			log.Println(err)
+			wg.Done()
+			return
+		}
 	}
 	wg.Done()
 }
