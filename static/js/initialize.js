@@ -10,6 +10,8 @@ function BabelWebV2() {
     /*----   Graph    ----*/
     var nodes = [];   //Nodes of the graph
     var links = [];
+		var Idnodes =	{};
+		var Idlinks =	{};
 
     /* ----    The structure of the data base    ----*/
 
@@ -116,14 +118,10 @@ function BabelWebV2() {
 		new NeighbourEntry(entry.address, entry.cost, entry.if,
 				   entry.reach, entry.rtt, entry.rttcost,
 				   entry.rxcost, entry.txcost);
-	    //nodes.push(new Node(entry.address));
-	    //links.push(new Link("center", entry.address));
-	    //initGraph2();
+					 addNode(entry.address);
+					 addLink("center",entry.address);
+	    		 restart();
 
-	    nodes.push(new Node(entry.address));
-	    links.push(new Link("center", entry.address));
-	    restart();
-	    
 	    insertNeighbour_html(entry.address, entry.cost, entry.if,
 				 entry.reach, entry.rtt, entry.rttcost,
 				 entry.rxcost, entry.txcost, data.id);
@@ -136,12 +134,11 @@ function BabelWebV2() {
             insertRoute_html(entry.prefix.IP, entry.metric, entry.refmetric,
 			     entry.id, entry.via, entry.if,
 			     entry.installed, data.id);
-            // if(nodes.includes(entry.via)== false)
-            //   nodes.push(new Node(entry.from.via));
-            // if(entry.refmetric == 0)// est un voisin
-            // {
-            //   //links.push(new Link("center",entry.from.via));
-            // }
+
+             if(entry.refmetric != 0){
+							// addNode(entry.id);
+          		 //addLink(entry.via,entry.id);
+        		}
             break;
 	case "xroute":
 	    insertXroute_html(entry.metric, entry.prefix.IP, data.id);
@@ -155,6 +152,28 @@ function BabelWebV2() {
 	default:
 	}
     }
+
+		function addNode(id) {
+			nodes.push(new Node(id));
+		 	Idnodes[id]= nodes.length-1;
+		}
+
+		function  addLink(id_source, id_target) {
+			links.push(new Link(id_source, id_target));
+			if(id_source in Idlinks){
+				Idlinks[id_source].push(links.length-1);
+			}
+			else {
+				Idlinks[id_source] = [links.length-1]
+			}
+			if(id_target in Idlinks){
+				Idlinks[id_target].push(links.length-1);
+			}
+			else {
+				Idlinks[id_target] = [links.length-1]
+			}
+
+		}
 
     function change(data){
 	var entry = data.data;
@@ -178,13 +197,43 @@ function BabelWebV2() {
 	default:
 	}
     }
-    
+
     function flush(data){
-	var entry = data.data;
-	if(data.table == "neighbour" || data.table == "route" ||
-	   data.table == "xroute" || data.table == "interface")
-	    deleteRow(data.id);
-    }
+			var entry = data.data;
+			switch (data.table) {
+				case "neighbour":		  deteteNeighbour(data.id);
+					break;
+				case "route":	    		deleteRow(data.id);
+					break;
+				case "xroute":	    	deleteRow(data.id);
+					break;
+				case "interface":	    deleteRow(data.id);
+					break;
+				default:
+			}
+		}
+/*-----------------------------------------------------------*/
+		function deteteNeighbour(id) {
+			deleteRow(id);
+			var index = Idnodes[id];
+			nodes.splice(index,1);
+			console.log(Idnodes);
+			//Idnodes.delete(id);
+			delete Idnodes[id];
+			console.log(Idnodes);
+
+			var indexlink = Idlinks[id];
+			for(var x in   indexlink){
+				links.splice(indexlink[x],1);
+			}
+			console.log(Idlinks);
+			//Idlinks.delete(id);
+			delete Idlinks[id];
+			console.log(Idlinks);
+
+			restart();
+		}
+
 
     function deleteRow(row_id) {
 	var row = document.getElementById(row_id);
@@ -204,7 +253,7 @@ function BabelWebV2() {
 	, "orange" : "#f18973"
 	, "red" : "#f30"
     };
-    
+
     var colors = {
 	installed: palette.green
         , uninstalled: palette.lightGreen
@@ -240,7 +289,7 @@ function BabelWebV2() {
 	row.cells[5].innerHTML = cost;
 	row.cells[6].innerHTML = rtt;
     }
-    
+
     function updateRowRoute(prefix, metric, refmetric, id, via,
 			    iff, installed, id_row) {
 	var row = document.getElementById(id_row);
@@ -260,7 +309,7 @@ function BabelWebV2() {
 	row.cells[5].innerHTML = iff;
 	row.cells[6].innerHTML = installed;
     }
-    
+
     function updateRowXroute(prefix, metric, id_row) {
 	var row = document.getElementById(id_row);
 	console.log(row);
@@ -387,7 +436,7 @@ function BabelWebV2() {
                   .on("drag", dragged)
                   .on("end", dragended))
 	    .merge(node);
-	
+
 	link = link
             .data(links, function(d) {
 		return d.source.id + "-" + d.target.id;});
@@ -441,7 +490,7 @@ function BabelWebV2() {
 	d.fx = null;
 	d.fy = null;
     }
-    
+
     BBabelWebV2= {};
     BabelWebV2.connect = connect;
     //BabelWebV2.init = init;
