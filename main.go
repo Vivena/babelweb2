@@ -19,14 +19,15 @@ func flagsInit(node *string, bwPort *string) {
 	flag.StringVar(&port, "p", "33123", "port (shorthand)")
 	flag.StringVar(&host, "host", "::1", "hostname")
 	flag.StringVar(&port, "port", "33123", "port")
-	flag.StringVar(&tempPort, "b", "8080", "babelweb Port (shorthanf)")
-	flag.StringVar(&tempPort, "bwport", "8080", "babelweb Port ")
+	flag.StringVar(&tempPort, "b", "8080", "babelweb Port (shorthand)")
+	flag.StringVar(&tempPort, "bwport", "8080", "babelweb Port")
 	flag.Parse()
 	*node = "[" + host + "]:" + port
 	*bwPort = ":" + tempPort
 }
 
-func Connection(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup) {
+func Connection(updates chan parser.BabelUpdate, node string,
+	wg *sync.WaitGroup) {
 	var conn net.Conn
 	var err error
 	wg.Add(1)
@@ -53,8 +54,8 @@ func Connection(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup
 			wg.Done()
 			return
 		}
-		wg.Done()
 	}
+	wg.Done()
 }
 
 func main() {
