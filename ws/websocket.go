@@ -96,11 +96,11 @@ func Handler(l *Listenergroupe) http.Handler {
 			}
 			return err
 		})
-		Db.Unlock()
 
 		log.Println("New connection to a websocket")
 		updates := NewListener()
 		l.Push(updates)
+		Db.Unlock()
 		defer l.Flush(updates)
 		mess := make(chan []byte, ChanelSize)
 		go GetMess(conn, mess)
