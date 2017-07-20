@@ -492,3 +492,11 @@ func (t *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	}
 	return nil
 }
+
+func (t *BabelDesc) Clean(updChan chan BabelUpdate) error {
+	return t.Iter(func(u BabelUpdate) error {
+		u.action = "flush"
+		updChan <- u
+		return nil
+	})
+}

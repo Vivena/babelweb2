@@ -182,7 +182,7 @@ function BabelWebV2() {
 
     function deleteNeighbour(id) {
 	deleteRow(id);
-	
+
 	var index = Idnodes[id];
 	nodes.splice(index,1);
 	console.log(Idnodes);
@@ -191,7 +191,7 @@ function BabelWebV2() {
 	console.log(Idnodes);
 
 	var indexlink = Idlinks[id];
-	for(var x in   indexlink){
+	for(var x in indexlink){
 	    links.splice(indexlink[x],1);
 	}
 	console.log(Idlinks);
