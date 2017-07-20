@@ -10,12 +10,15 @@ function BabelWebV2() {
     /*----   Graph    ----*/
     var nodes = [];   //Nodes of the graph
     var links = [];
-		var Idnodes =	{};
-		var Idlinks =	{};
+    //var Idnodes = {};
+    //var Idlinks = {};
+
+    const current_g = 0;
+    const neighbour_g = 1;
 
     /* ----    The structure of the data base    ----*/
 
-    nodes.push(new Node("center"));
+    nodes.push(new Node("center", current_g));
     //nodes.push(new Node("test"));
     //links.push(new Link("center", "test"));
 
@@ -56,11 +59,12 @@ function BabelWebV2() {
     }
 
     /*----   The structure of the graph    ----*/
-    function Node(id ) {
+    function Node(id, group) {
 	this.id = id;
+	this.group = group;
     }
 
-    function Link(source,target) {
+    function Link(source, target) {
         this.source = source;
         this.target = target;
     }
@@ -118,9 +122,9 @@ function BabelWebV2() {
 		new NeighbourEntry(entry.address, entry.cost, entry.if,
 				   entry.reach, entry.rtt, entry.rttcost,
 				   entry.rxcost, entry.txcost);
-					 addNode(entry.address);
-					 addLink("center",entry.address);
-	    		 restart();
+	    addNode(entry.address, neighbour_g);
+	    addLink("center", entry.address);
+	    restart();
 
 	    insertNeighbour_html(entry.address, entry.cost, entry.if,
 				 entry.reach, entry.rtt, entry.rttcost,
@@ -135,10 +139,10 @@ function BabelWebV2() {
 			     entry.id, entry.via, entry.if,
 			     entry.installed, data.id);
 
-             if(entry.refmetric != 0){
-							// addNode(entry.id);
-          		 //addLink(entry.via,entry.id);
-        		}
+            if(entry.refmetric != 0){
+		// addNode(entry.id);
+          	//addLink(entry.via,entry.id);
+            }
             break;
 	case "xroute":
 	    insertXroute_html(entry.metric, entry.prefix.IP, data.id);
@@ -153,27 +157,50 @@ function BabelWebV2() {
 	}
     }
 
-		function addNode(id) {
-			nodes.push(new Node(id));
-		 	Idnodes[id]= nodes.length-1;
-		}
+    function addNode(id, group) {
+	nodes.push(new Node(id, group));
+	//Idnodes[id]= nodes.length-1;
+    }
 
-		function  addLink(id_source, id_target) {
-			links.push(new Link(id_source, id_target));
-			if(id_source in Idlinks){
-				Idlinks[id_source].push(links.length-1);
-			}
-			else {
-				Idlinks[id_source] = [links.length-1]
-			}
-			if(id_target in Idlinks){
-				Idlinks[id_target].push(links.length-1);
-			}
-			else {
-				Idlinks[id_target] = [links.length-1]
-			}
+    function  addLink(id_source, id_target) {
+	links.push(new Link(id_source, id_target));
+	/*
+	if(id_source in Idlinks){
+	    Idlinks[id_source].push(links.length-1);
+	}
+	else {
+	    Idlinks[id_source] = [links.length-1]
+	}
+	if(id_target in Idlinks){
+	    Idlinks[id_target].push(links.length-1);
+	}
+	else {
+	    Idlinks[id_target] = [links.length-1]
+	}
+*/
+    }
 
-		}
+    function deleteNeighbour(id) {
+	deleteRow(id);
+	
+	var index = Idnodes[id];
+	nodes.splice(index,1);
+	console.log(Idnodes);
+	//Idnodes.delete(id);
+	delete Idnodes[id];
+	console.log(Idnodes);
+
+	var indexlink = Idlinks[id];
+	for(var x in   indexlink){
+	    links.splice(indexlink[x],1);
+	}
+	console.log(Idlinks);
+	//Idlinks.delete(id);
+	delete Idlinks[id];
+	console.log(Idlinks);
+
+	restart();
+    }
 
     function change(data){
 	var entry = data.data;
@@ -199,40 +226,23 @@ function BabelWebV2() {
     }
 
     function flush(data){
-			var entry = data.data;
-			switch (data.table) {
-				case "neighbour":		  deteteNeighbour(data.id);
-					break;
-				case "route":	    		deleteRow(data.id);
-					break;
-				case "xroute":	    	deleteRow(data.id);
-					break;
-				case "interface":	    deleteRow(data.id);
-					break;
-				default:
-			}
-		}
-/*-----------------------------------------------------------*/
-		function deteteNeighbour(id) {
-			deleteRow(id);
-			var index = Idnodes[id];
-			nodes.splice(index,1);
-			console.log(Idnodes);
-			//Idnodes.delete(id);
-			delete Idnodes[id];
-			console.log(Idnodes);
-
-			var indexlink = Idlinks[id];
-			for(var x in   indexlink){
-				links.splice(indexlink[x],1);
-			}
-			console.log(Idlinks);
-			//Idlinks.delete(id);
-			delete Idlinks[id];
-			console.log(Idlinks);
-
-			restart();
-		}
+	var entry = data.data;
+	switch (data.table) {
+	case "neighbour":
+	    deleteNeighbour(data.id);
+	    break;
+	case "route":
+	    deleteRow(data.id);
+	    break;
+	case "xroute":
+	    deleteRow(data.id);
+	    break;
+	case "interface":
+	    deleteRow(data.id);
+	    break;
+	default:
+	}
+    }
 
 
     function deleteRow(row_id) {
@@ -402,7 +412,7 @@ function BabelWebV2() {
 	    .insert("svg:svg", ".legend")
 	    .attr("width", width)
 	    .attr("height", height)
-	    .attr("stroke-width", "1.5px");
+	    .attr("stroke-width", "3px");
 
 	svg = d3.select("svg");
         width = +svg.attr("width");
@@ -414,13 +424,13 @@ function BabelWebV2() {
             .force("center", d3.forceCenter(width / 2, height / 2))
 	    .on("tick", ticked);
 
-	node = svg.append("g")
-            .attr("class", "nodes")
-            .selectAll("circle");
-
 	link = svg.append("g")
             .attr("class", "links")
             .selectAll("line");
+	
+	node = svg.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle");
 
 	restart();
     }
@@ -430,7 +440,14 @@ function BabelWebV2() {
             .data(nodes, function(d) { return d.id;})
             .enter().append("circle")
             .attr("r", 5)
-            .attr("fill", function(d) { return color(d.group); })
+            .attr("fill", function(d) {
+		switch(d.group) {
+		case current_g:
+		    return colors.current;
+		case neighbour_g:
+		    return colors.neighbour;
+		}
+	    })
             .call(d3.drag()
                   .on("start", dragstarted)
                   .on("drag", dragged)
