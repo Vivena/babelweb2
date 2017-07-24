@@ -37,6 +37,11 @@ type dataBase struct {
 	Bd parser.BabelDesc
 }
 
+type telnetWarper struct {
+	sync.Mutex
+	telnetcon net.Conn
+}
+
 //MCUpdates multicast updates sent by the routine comminicating with the routers
 func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe,
 	wg *sync.WaitGroup) {
@@ -72,10 +77,12 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe,
 
 //GetRouterMess gets messages sent by the current router and redirect them to
 //the rMess channel
-func GetRouterMess(s *bufio.Scanner, rMess chan string, quit chan struct{}) {
+func GetRouterMess(telnet *telnetWarper, rMess chan string, quit chan struct{}) {
+	s := bufio.NewScanner(bufio.NewReader(telnet.telnetcon))
 	for {
 		select {
 		case <-quit:
+			log.Println("I quit")
 			return
 		default:
 			s.Scan()
@@ -101,7 +108,7 @@ func GetMess(conn *websocket.Conn, mess chan []byte) {
 }
 
 //HandleMessage handle messages receved from the client
-func HandleMessage(mess []byte, conn *websocket.Conn, telnetcon *net.Conn, quit chan struct{}, rMess chan string) {
+func HandleMessage(mess []byte, conn *websocket.Conn, telnet *telnetWarper, quit chan struct{}, rMess chan string) {
 	var m2c Message
 	var err error
 	temp := strings.Split(string(mess), " ")
@@ -109,17 +116,21 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnetcon *net.Conn, quit 
 
 	if temp[0] == "connect" {
 		//the ip we're asked to connect is valide
+		log.Println(telnet)
 		if net.ParseIP(temp[1]) != nil {
 			node := "[" + temp[1] + "]:33123"
 			//it's the first connection
-			if (*telnetcon) != nil {
-				log.Println("closing previous connection")
+			if telnet.telnetcon != nil {
+				log.Println("quit")
 				quit <- struct{}{}
-				(*telnetcon).Close()
+				log.Println("close?")
+				telnet.telnetcon.Close()
+				log.Println("close")
+
 			}
-			*telnetcon, err = net.Dial("tcp6", node)
-			s := bufio.NewScanner(bufio.NewReader(*telnetcon))
-			go GetRouterMess(s, rMess, quit)
+
+			telnet.telnetcon, err = net.Dial("tcp6", node)
+
 			if err != nil {
 				log.Println("connection error")
 				m2c.message = "error"
@@ -129,6 +140,7 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnetcon *net.Conn, quit 
 				}
 			} else { //connection successfull
 				log.Println("connected")
+				go GetRouterMess(telnet, rMess, quit)
 				m2c.message = "connected"
 				error := conn.WriteJSON(m2c)
 				if error != nil {
@@ -136,18 +148,19 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnetcon *net.Conn, quit 
 				}
 			}
 		} else {
-			m2c.message = "not an ip"
+			log.Println("not an IP")
+			m2c.message = "not an IP"
 			error := conn.WriteJSON(m2c)
 			if error != nil {
-				log.Println("not an ip")
+				log.Println(error)
 			}
 		}
 	} else {
-		if (*telnetcon) == nil {
+		if (telnet.telnetcon) == nil {
 			log.Println("not connected")
 		} else {
 			log.Println("sending: ", string(mess))
-			_, error := (*telnetcon).Write(append(mess, byte('\n')))
+			_, error := (telnet.telnetcon).Write(append(mess, byte('\n')))
 			if error != nil {
 				log.Println(error)
 			}
@@ -162,7 +175,7 @@ func Handler(l *Listenergroupe) http.Handler {
 	var m2c Message
 	m2c.action = "client"
 
-	quit := make(chan struct{})
+	quit := make(chan struct{}, 2)
 	fn := func(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("New connection to a websocket")
@@ -187,8 +200,7 @@ func Handler(l *Listenergroupe) http.Handler {
 		Db.Unlock()
 		defer l.Flush(updates)
 
-		var telnetconn net.Conn
-
+		var telnet telnetWarper
 		messFromClient := make(chan []byte, ChanelSize)
 		messFromRouter := make(chan string, 2)
 		go GetMess(conn, messFromClient)
@@ -218,7 +230,7 @@ func Handler(l *Listenergroupe) http.Handler {
 					return
 				}
 
-				HandleMessage(clientMessage, conn, &telnetconn, quit, messFromRouter)
+				HandleMessage(clientMessage, conn, &telnet, quit, messFromRouter)
 
 				/*****************************************************************************/
 			}
