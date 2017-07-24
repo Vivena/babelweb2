@@ -183,7 +183,7 @@ function babelWebV2() {
 	    .insert("svg:svg", ".legend")
 	    .attr("width", width)
 	    .attr("height", height)
-	    .attr("stroke-width", "3px");
+	    .attr("stroke-width", "1.5px");
 
 	svg = d3.select("svg");
         width = +svg.attr("width");
