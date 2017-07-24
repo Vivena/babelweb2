@@ -25,8 +25,8 @@ var upgrader = websocket.Upgrader{
 var Db dataBase
 
 type Message struct {
-	action  string
-	message string
+	Action  string `json:"action"`
+	Message string `json:"message"`
 }
 
 //Message messages to send to the client via websocket
@@ -82,7 +82,6 @@ func GetRouterMess(telnet *telnetWarper, rMess chan string, quit chan struct{}) 
 	for {
 		select {
 		case <-quit:
-			log.Println("I quit")
 			return
 		default:
 			s.Scan()
@@ -110,13 +109,14 @@ func GetMess(conn *websocket.Conn, mess chan []byte) {
 //HandleMessage handle messages receved from the client
 func HandleMessage(mess []byte, conn *websocket.Conn, telnet *telnetWarper, quit chan struct{}, rMess chan string) {
 	var m2c Message
+	m2c.Action = "client"
 	var err error
 	temp := strings.Split(string(mess), " ")
 	log.Println(temp)
 
 	if temp[0] == "connect" {
 		//the ip we're asked to connect is valide
-		log.Println(telnet)
+		log.Println("temp:", temp)
 		if net.ParseIP(temp[1]) != nil {
 			node := "[" + temp[1] + "]:33123"
 			//it's the first connection
@@ -133,15 +133,14 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnet *telnetWarper, quit
 
 			if err != nil {
 				log.Println("connection error")
-				m2c.message = "error"
+				m2c.Message = "error"
 				error := conn.WriteJSON(m2c)
 				if error != nil {
 					log.Println(err)
 				}
 			} else { //connection successfull
-				log.Println("connected")
 				go GetRouterMess(telnet, rMess, quit)
-				m2c.message = "connected"
+				m2c.Message = "connected " + node
 				error := conn.WriteJSON(m2c)
 				if error != nil {
 					log.Println(err)
@@ -149,7 +148,7 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnet *telnetWarper, quit
 			}
 		} else {
 			log.Println("not an IP")
-			m2c.message = "not an IP"
+			m2c.Message = "not an IP"
 			error := conn.WriteJSON(m2c)
 			if error != nil {
 				log.Println(error)
@@ -173,7 +172,7 @@ func HandleMessage(mess []byte, conn *websocket.Conn, telnet *telnetWarper, quit
 //Handler manage the websockets
 func Handler(l *Listenergroupe) http.Handler {
 	var m2c Message
-	m2c.action = "client"
+	m2c.Action = "client"
 
 	quit := make(chan struct{}, 2)
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -219,7 +218,8 @@ func Handler(l *Listenergroupe) http.Handler {
 
 				//we've got a message from the router
 			case routerMessage := <-messFromRouter:
-				m2c.message = routerMessage
+				log.Println("rmess: ", routerMessage)
+				m2c.Message = routerMessage
 				err := conn.WriteJSON(m2c)
 				if err != nil {
 					log.Println(err)

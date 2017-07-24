@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <title>Babelweb</title>
         <link rel="stylesheet" type="text/css" href="./css/style.css">
-      
+      <script src="./js/terminal.js"></script>
 
     </head>
 
@@ -132,18 +132,33 @@
         Roso.  Many thanks to Didier Gillet who coined the name.
         </p>
 
+        <br>
+        <br>
+        <p id="test"></p>
+
         <script src="/d3/d3.js"></script>
         <script src="./js/initialize.js"></script>
         <script type="text/javascript">
 
-
+        var socketWarper = {socket: null}
           var babelweb  = babelWebV2();
           window.onload = function() {
-	      babelweb.initGraph();
-              babelweb.connect();
+	           babelweb.initGraph();
+              babelweb.connect(socketWarper);
           }
 
         </script>
 
+        <script>
+
+          element = document.getElementById("test");
+          var t1 = new Terminal("test", socketWarper)
+          console.log("test connection")
+          t1.setHeight("200px")
+          t1.setWidth('600px')
+          t1.connect("::1")
+          element.appendChild(t1.div)
+
+        </script>
     </body>
 </html>

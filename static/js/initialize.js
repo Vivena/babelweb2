@@ -34,19 +34,19 @@ function babelWebV2() {
         , route: palette.gray
     };
 
-    function connect() {
-	var socket = null;
+    function connect(socketWarper) {
+
 	try {
-            socket = new WebSocket("ws://localhost:8080/ws");
+            socketWarper.socket = new WebSocket("ws://localhost:8080/ws");
 	} catch (exception) {
             console.error(exception);
 	}
 
-	socket.onerror = function(error) {
+	socketWarper.socket.onerror = function(error) {
             console.error(error);
 	};
 
-	socket.onopen = function(event) {
+	socketWarper.socket.onopen = function(event) {
             d3.selectAll("body").select("#state")
 		.text("Connected").style("background-color", "green");
 
@@ -59,6 +59,7 @@ function babelWebV2() {
 		convertJSON(event);
             };
 	};
+  // alert("BOUH");
     }
 
     /*
@@ -93,14 +94,28 @@ function babelWebV2() {
 	       };
 
     convertJSON(2);*/
-    
+
     function convertJSON(event) {
 	var data = JSON.parse(event.data);
+  if(data.action ==="client"){
+    if(data.id!==""){
+      m = data.message.split(" ")
+      console.log(m[0])
+        if (m[0]=== "connected") {
+            t1.setIp(m[1])
+        }
+        else {
 
-	if(current === "unknown")
+          t1.print(data.message)
+        }
+    }
+    return
+  }
+
+ if(current === "unknown")
 	    //current = data.router;
 	    current = "r1";
-	
+
 	//if(!(data.router in babelDesc))
 	if(!("r1" in babelDesc))
 	    //babelDesc[data.router] = {
@@ -132,7 +147,7 @@ function babelWebV2() {
 	    updateCurrent(current);
     }
 
-    function updateSwitch() {	
+    function updateSwitch() {
 	var options = d3.select("#nodes").selectAll("option")
 	    .data(d3.keys(babelDesc), function(d) { return d;});
 	options.enter().append("option")
@@ -146,7 +161,7 @@ function babelWebV2() {
 		return babelDesc[x].self.name
 		.localeCompare(babelDesc[y].self.name);
 	});
-	
+
 	var sel = document.getElementById("nodes");
 	for(var i, j = 0; i = sel.options[j]; j++) {
 	    if(i.value == current) {
@@ -161,10 +176,10 @@ function babelWebV2() {
     function updateCurrent(newCurrent) {
 	if(!initEnd)
 	    return;
-	
+
 	if(current != newCurrent)
 	    routers = {};
-	
+
 	current = newCurrent;
 
 	updateTable("neighbour");
@@ -216,7 +231,7 @@ function babelWebV2() {
 		metric: 0,
 	    };
 	}
-	
+
 	function first(array, f) {
 	    var i = 0, n = array.length, a = array[0], b;
 	    while (++i < n) {
@@ -268,7 +283,7 @@ function babelWebV2() {
 		neighToRouterMetric[r.via][r.id].refmetric =
 		Math.min(neighToRouterMetric[r.via][r.id].refmetric, refmetric);
 	}
-	
+
 	addrToRouterId = {};
 	for(var n in neighToRouterMetric) {
 	    addrToRouterId[n] =
@@ -308,14 +323,14 @@ function babelWebV2() {
 			target: routers[addrToRouterId[r.via]],
 			installed: true
 		       });
-	    
+
 	    insertKey(links, {
 		key: normalizeId(r.id + r.via + r.installed),
 		source: routers[addrToRouterId[r.via]],
 		target: routers[r.id],
 		installed: r.installed }
 		     );
-	    
+
 	    /*
 	    insertKey(links, {
 		key: normalizeId(r.id + r.via + r.installed),
@@ -437,7 +452,7 @@ function babelWebV2() {
 
     function updateRow(d, name, headers) {
 	var tr = d3.select(this);
-	
+
 	var costColor = d3.scaleLog()
 	    .domain([0, 96, 256, 65535])
 	    .range([colors.wiredLink,
@@ -445,7 +460,7 @@ function babelWebV2() {
 		    colors.losslessWireless,
 		    colors.unreachableNeighbour])
 	    .interpolate(d3.interpolateHcl);
-	
+
 	if(name == "route")
 	    tr.style("background-color",
 		     (d.value.metric == 65535 ? colors.unreachable :
@@ -453,7 +468,7 @@ function babelWebV2() {
 		      colors.uninstalled));
 	else if(name == "neighbour")
 	    tr.style("background-color", costColor(d.value.rxcost));
-	
+
 	var row = tr.selectAll("td")
 	    .data(headers.map(function(h){
 		if(h == "reach") {

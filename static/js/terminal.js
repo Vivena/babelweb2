@@ -33,11 +33,9 @@ var Terminal = (function(){
     this.connect = function(ip){
       setTimeout(function(){
         console.log("connection")
-        console.log(socketWarper.socket)
-        console.log("connect "+ip)
         socketWarper.socket.send("connect "+ip)
       }, 1000)
-      this.inputSpan.textContent = ip+" :"
+      this.inputSpan.textContent = "notConnected > "
     }
 
     this.inputElem.onkeydown = function(e){
@@ -76,7 +74,7 @@ var Terminal = (function(){
     this.getServData = function(data,done){
       this.print(data)
       if(done){
-        aitingServData = false
+        waitingServData = false
       }
     }
 
@@ -120,6 +118,9 @@ var Terminal = (function(){
     this.setWidth = function(width){
       this.div.style.width = width
     }
+    this.setIp = function(ip){
+      this.inputSpan.textContent = ip + " > "
+    }
 
     this.inputLine.appendChild(this.inputSpan)
     this.inputLine.appendChild(this.inputShow)
@@ -142,7 +143,7 @@ var Terminal = (function(){
 		this.inputElem.style.opacity = '0'
     this.inputElem.style.fontSize = '0.2em'
 
-    this.inputSpan.textContent = "notConnected :"
+    this.inputSpan.textContent = "notConnected > "
 
     this.cursor.style.background = 'white'
     this.cursor.innerHTML = 'I'
