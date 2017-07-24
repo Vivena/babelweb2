@@ -331,7 +331,14 @@ func (upd BabelUpdate) ToS() SBabelUpdate {
 	s_upd := SBabelUpdate{upd.action, upd.tableId, upd.entryId,
 		make(map[Id]interface{})}
 	for id, ev := range upd.entry {
-		s_upd.EntryData[id] = ev.data
+		switch t := ev.data.(type) {
+		case *net.IPNet:
+			s_upd.EntryData[id] = t.String();
+		case net.IP:
+			s_upd.EntryData[id] = t.String();
+		default:
+			s_upd.EntryData[id] = ev.data
+		}
 	}
 	return s_upd
 }
