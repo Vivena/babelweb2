@@ -25,7 +25,7 @@
         <p>
             <label for="nodes">Current node:</label>
             <select id="nodes"
-              onChange="babel.setCurrent(this.options[this.selectedIndex].value);">
+              onChange="babelweb.updateCurrent(this.options[this.selectedIndex].value);">
               <option value="unknown" selected>none</option>
             </select>
             <br>
@@ -137,10 +137,10 @@
         <script type="text/javascript">
 
 
-          var babelweb  = BabelWebV2();
+          var babelweb  = babelWebV2();
           window.onload = function() {
+	      babelweb.initGraph();
               babelweb.connect();
-              babelweb.initGraph();
           }
 
         </script>

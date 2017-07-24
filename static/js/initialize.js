@@ -1,241 +1,12 @@
-/* ----       BabelWeb.2          ----*/
 
-function BabelWebV2() {
-    /* ----    Data base babel    ----*/
-    var Routes = {};
-    var Xroutes = {};
-    var Neighbours = {};
-    var Interfaces = {};
+function babelWebV2() {
+    var babelDesc = {};
+    var current = "unknown";
 
-    /*----   Graph    ----*/
-    var nodes = [];   //Nodes of the graph
+    var routers = {};
+    var nodes = [];
     var links = [];
 
-    var Idnodes = new Map();
-    var Idlinks = new Map();
-
-    const current_g = 0;
-    const neighbour_g = 1;
-    const other = 2;
-
-    /* ----    The structure of the data base    ----*/
-
-    nodes.push(new Node("center", current_g));
-    //nodes.push(new Node("test"));
-    //links.push(new Link("center", "test"));
-
-    function NeighbourEntry(address, cost, iff, reach, rtt,
-			    rttcost, rxcost, txcost) {
-	this.address = address;
-	this.cost = cost;
-	this.iff = iff;
-	this.reach = reach;
-	this.rtt = rtt;
-	this.rttcost = rttcost;
-	this.rxcost = rxcost;
-	this.txcost = txcost;
-    }
-
-    function RouteEntry(from, id, iff, installed, metric,
-			prefix, refmetric, via) {
-	this.from = from;
-	this.id = id;
-	this.iff = iff;
-	this.installed = installed;
-	this.metric = metric;
-	this.prefix = prefix;
-	this.refmetric = refmetric;
-	this.via = via;
-    }
-
-    function XrouteEntry(from, metric, prefix) {
-	this.from = from;
-	this.metric = metric;
-	this.prefix = prefix;
-    }
-
-    function InterfaceEntry(ipv4, ipv6, up) {
-	this.ipv4 = ipv4;
-	this.ipv6 = ipv6;
-	this.up = up;
-    }
-
-    /*----   The structure of the graph    ----*/
-    function Node(id, group) {
-	this.id = id;
-	this.group = group;
-    }
-
-    function Link(source, target) {
-        this.source = source;
-        this.target = target;
-    }
-
-    function connect() {
-	var socket = null;
-	try {
-            socket = new WebSocket("ws://localhost:8080/ws");
-	} catch (exception) {
-            console.error(exception);
-	}
-
-	socket.onerror = function(error) {
-            console.error(error);
-	};
-
-	socket.onopen = function(event) {
-            d3.selectAll("body").select("#state")
-		.text("Connected").style("background-color", "green");
-
-            this.onclose = function(event) {
-		d3.selectAll("body").select("#state")
-		    .text("Disconnected").style("background-color", "red");
-            };
-
-            this.onmessage = function(event) {
-		ConvertJSON(event);
-            };
-	};
-    }
-
-    function ConvertJSON(event) {
-	var data = JSON.parse(event.data);
-	//console.log(data);
-
-	switch (data.action) {
-	case "add":
-	    add(data);
-            break;
-	case "change":
-	    change(data);
-            break;
-	case "flush":
-	    flush(data);
-            break;
-	default:
-	}
-    }
-
-    function add(data) {
-	var entry = data.data;
-	switch (data.table) {
-	case "neighbour":
-            Neighbours[data.id] =
-		new NeighbourEntry(entry.address, entry.cost, entry.if,
-				   entry.reach, entry.rtt, entry.rttcost,
-				   entry.rxcost, entry.txcost);
-
-	    addNode(entry.address, neighbour_g);
-	    addLink(entry.address, "center", entry.address);
-
-	    insertNeighbour_html(entry.address, entry.cost, entry.if,
-				 entry.reach, entry.rtt, entry.rttcost,
-				 entry.rxcost, entry.txcost, data.id);
-	    break;
-	case "route":
-            Routes[data.id] =
-		new RouteEntry(entry.from.IP, entry.id, entry.if,
-                               entry.installed, entry.metric, entry.prefix.IP,
-			       entry.refmetric, entry.via);
-            insertRoute_html(entry.prefix.IP, entry.metric, entry.refmetric,
-			     entry.id, entry.via, entry.if,
-			     entry.installed, data.id);
-
-            if(entry.refmetric != 0){
-		//addNode(entry.id, other);//--------------------------------
-          	//addLink(data.id, entry.via,entry.id);
-            }
-            break;
-	case "xroute":
-	    insertXroute_html(entry.metric, entry.prefix.IP, data.id);
-            Xroutes[data.id] =
-		new XrouteEntry(entry.from.IP, entry.metric, entry.prefix.IP);
-            break;
-	case "interface":
-            Interfaces[data.id] =
-		new InterfaceEntry(entry.ipv4, entry.ipv6, entry.up);
-            break;
-	default:
-	}
-    }
-
-    function addNode(id, group) {
-	nodes.push(new Node(id, group));
-	Idnodes.set(id,(nodes.length-1));
-	restart();
-
-    }
-    function  addLink(id_route, id_source, id_target) {
-	links.push(new Link(id_source, id_target));
-	Idlinks.set(id_route,(links.length-1));
-	restart();
-
-    }
-    function deleteNode(id){
-	//console.log(nodes);
-	nodes.splice(Idnodes.get(id),1);
-	Idnodes.delete(id);
-	restart();
-    }
-
-    function deleteLink(id_route,id) {
-	index = links.indexOf(id_route);
-	links.splice(Idlinks[index],1);
-	//links.splice(Idlinks[id_route],1);
-	//Idlinks.delete(id_route);
-	restart();
-    }
-
-    function change(data){
-	var entry = data.data;
-
-	switch (data.table) {
-	case "neighbour":
-	    updateRowNeighbour(entry.address, entry.cost, entry.if,
-			       entry.reach, entry.rtt, entry.rttcost,
-			       entry.rxcost, entry.txcost,data.id);
-            break;
-	case "route":
-	    updateRowRoute(entry.prefix.IP, entry.metric, entry.refmetric,
-			   entry.id, entry.via, entry.if,
-			   entry.installed, data.id);
-            break;
-	case "xroute":
-	    updateRowXroute(entry.prefix.IP, entry.metric, data.id) ;
-            break;
-	case "interface":
-            break;
-	default:
-	}
-    }
-
-    function flush(data){
-	var entry = data.data;
-	switch (data.table) {
-	case "neighbour":
-	    deleteRow(data.id);
-	    deleteNode(entry.address);
-	    break;
-	case "route":
-	    deleteRow(data.id);
-	    deleteLink(data.id,data.id);
-	    break;
-	case "xroute":
-	    deleteRow(data.id);
-	    break;
-	case "interface":
-	    break;
-	default:
-	}
-    }
-
-
-    function deleteRow(row_id) {
-	var row = document.getElementById(row_id);
-	row.parentNode.removeChild(row);
-    }
-
-    /* Colors */
     var palette = {
 	"gray" : "#777"
 	, "lightGray" : "#ddd"
@@ -263,129 +34,144 @@ function BabelWebV2() {
         , route: palette.gray
     };
 
-    function updateRowNeighbour(address, cost, iff, reach, rtt,
-				rttcost, rxcost, txcost, id_row) {
-	var row = document.getElementById(id_row);
-	console.log(parseInt(cost));
+    function connect() {
+	var socket = null;
+	try {
+            socket = new WebSocket("ws://localhost:8080/ws");
+	} catch (exception) {
+            console.error(exception);
+	}
 
-	if(parseInt(cost) <= 96)
-	    row.style.background = colors.wiredLink;
-	else if(parseInt(cost) <= 256)
-            row.style.background = colors.losslessWireless;
-        else
-            row.style.background = colors.unreachable;
+	socket.onerror = function(error) {
+            console.error(error);
+	};
 
-	console.log(row);
-	row.cells[0].innerHTML = address;
-	row.cells[1].innerHTML = iff;
-	row.cells[2].innerHTML = reach.toString(16);
-	row.cells[3].innerHTML = rxcost;
-	row.cells[4].innerHTML = txcost;
-	row.cells[5].innerHTML = cost;
-	row.cells[6].innerHTML = rtt;
+	socket.onopen = function(event) {
+            d3.selectAll("body").select("#state")
+		.text("Connected").style("background-color", "green");
+
+            this.onclose = function(event) {
+		d3.selectAll("body").select("#state")
+		    .text("Disconnected").style("background-color", "red");
+            };
+
+            this.onmessage = function(event) {
+		convertJSON(event);
+            };
+	};
     }
 
-    function updateRowRoute(prefix, metric, refmetric, id, via,
-			    iff, installed, id_row) {
-	var row = document.getElementById(id_row);
-	if(parseInt(metric) >= 65535)
-	    row.style.background = colors.unreachable;
-	else if(installed == true)
-	    row.style.background = colors.installed;
-        else if(installed == false)
-            row.style.background = colors.uninstalled;
+    /*
+    var data = {router: "r1",
+		name: "woody",
+		table: "neighbour",
+		action: "add",
+		id: "55c47b990d90",
+		data: {
+		    "address": "fe80::e046:9aff:fe4e:912e",
+		    "if": "enp3s0",
+		    "reach": 6615,
+		    "rxcost": 96,
+		    "txcost": 96,
+		    "cost": 96,
+		},
+	       };
+    convertJSON(2);
+    data = {router: "r9",
+	    name: "buzz",
+		table: "neighbour",
+		action: "add",
+		id: "55c47b990d91",
+		data: {
+		    "address": "hohoho",
+		    "if": "enp2s0",
+		    "reach": 66615,
+		    "rxcost": 96,
+		    "txcost": 96,
+		    "cost": 96,
+		},
+	       };
 
-	console.log(row);
-	row.cells[0].innerHTML = prefix;
-	row.cells[1].innerHTML = metric;
-	row.cells[2].innerHTML = refmetric;
-	row.cells[3].innerHTML = id;
-	row.cells[4].innerHTML = via;
-	row.cells[5].innerHTML = iff;
-	row.cells[6].innerHTML = installed;
+    convertJSON(2);*/
+    
+    function convertJSON(event) {
+	var data = JSON.parse(event.data);
+
+	if(current === "unknown")
+	    //current = data.router;
+	    current = "r1";
+	
+	//if(!(data.router in babelDesc))
+	if(!("r1" in babelDesc))
+	    //babelDesc[data.router] = {
+	    babelDesc["r1"] = {
+		//"self": {"name": data.name, "id": data.router},
+		"self": {"name": "r1", "id": "woody"},
+		"interface": {},
+		"neighbour": {},
+		"route": {},
+		"xroute": {},
+	    };
+	//babelDesc[data.router].self.name = data.name;
+	//babelDesc[data.router][data.table][data.id] = {};
+	babelDesc["r1"].self.name = "woody";
+	babelDesc["r1"][data.table][data.id] = {};
+	if(data.action === "flush")
+	    //delete babelDesc[data.router][data.table][data.id];
+	    delete babelDesc["r1"][data.table][data.id];
+	else {
+	    for(var key in data.data)
+		//babelDesc[data.router][data.table][data.id][key] =
+		babelDesc["r1"][data.table][data.id][key] =
+		data.data[key];
+	}
+
+	updateSwitch();
+	//if(data.router === current)
+	if("r1" === current)
+	    updateCurrent(current);
     }
 
-    function updateRowXroute(prefix, metric, id_row) {
-	var row = document.getElementById(id_row);
-	console.log(row);
-	row.cells[0].innerHTML = prefix;
-	row.cells[1].innerHTML = metric;
+    function updateSwitch() {	
+	var options = d3.select("#nodes").selectAll("option")
+	    .data(d3.keys(babelDesc), function(d) { return d;});
+	options.enter().append("option")
+	    .attr("value", function(d) { return d; })
+	    .text(function (d) { return babelDesc[d].self.name; });
+	options.exit().remove();
+	d3.selectAll("#nodes option").sort(function (x, y) {
+	    if(x === "unknown")
+		return -1;
+	    else
+		return babelDesc[x].self.name
+		.localeCompare(babelDesc[y].self.name);
+	});
+	
+	var sel = document.getElementById("nodes");
+	for(var i, j = 0; i = sel.options[j]; j++) {
+	    if(i.value == current) {
+		sel.selectedIndex = j;
+		break;
+	    }
+	}
     }
 
-    function insertNeighbour_html(address, cost, iff, reach, rtt, rttcost,
-				  rxcost, txcost, id_row){
-	if(document.getElementById("loading") != null)
-	    deleteRow("loading");
-	var arrayLignes = document.getElementById("neighbour");
-	var row = arrayLignes.insertRow(-1);
+    var initEnd = false;
 
-	if(parseInt(cost) <= 96)
-	    row.style.background = colors.wiredLink;
-	else if(parseInt(cost) <= 256)
-            row.style.background = colors.losslessWireless;
-        else
-            row.style.background = colors.unreachable;
+    function updateCurrent(newCurrent) {
+	if(!initEnd)
+	    return;
+	
+	if(current != newCurrent)
+	    routers = {};
+	
+	current = newCurrent;
 
-	row.id = id_row;
-	var colonne1 = row.insertCell(0);
-	colonne1.innerHTML += address;
-	var colonne2 = row.insertCell(1);
-	colonne2.innerHTML += iff;
-	var colonne3 = row.insertCell(2);
-	colonne3.innerHTML += reach.toString(16);
-	var colonne4 = row.insertCell(3);
-	colonne4.innerHTML += rxcost;
-	var colonne5 = row.insertCell(4);
-	colonne5.innerHTML +=txcost ;
-	var colonne6 = row.insertCell(5);
-	colonne6.innerHTML +=cost;
-	var colonne7 = row.insertCell(6);
-	colonne7.innerHTML +=rtt;
-    }
-
-    function insertRoute_html(prefix, metric, refmetric, id, via,
-			      iff, installed, id_row){
-	if(document.getElementById("loading") != null)
-	    deleteRow("loading");
-
-	var arrayLignes = document.getElementById("route");
-	var ligne = arrayLignes.insertRow(-1);
-
-	if(parseInt(metric) >= 65535)
-	    ligne.style.background = colors.unreachable;
-	else if(installed == true)
-	    ligne.style.background = colors.installed;
-        else if(installed == false)
-            ligne.style.background = colors.uninstalled;
-
-	ligne.id = id_row;
-	var colonne1 = ligne.insertCell(0);
-	colonne1.innerHTML += prefix;
-	var colonne2 = ligne.insertCell(1);
-	colonne2.innerHTML += metric;
-	var colonne3 = ligne.insertCell(2);
-	colonne3.innerHTML += refmetric;
-	var colonne4 = ligne.insertCell(3);
-	colonne4.innerHTML += id;
-	var colonne5 = ligne.insertCell(4);
-	colonne5.innerHTML += via ;
-	var colonne6 = ligne.insertCell(5);
-	colonne6.innerHTML += iff;
-	var colonne7 = ligne.insertCell(6);
-	colonne7.innerHTML += installed;
-    }
-
-    function insertXroute_html(metric, prefix, id_row){
-	if(document.getElementById("loading") != null)
-	    deleteRow("loading");
-
-	var arrayLignes = document.getElementById("xroute");
-	var ligne = arrayLignes.insertRow(-1);
-	ligne.id = id_row;
-	var colonne1 = ligne.insertCell(0);
-	colonne1.innerHTML += prefix;
-	var colonne2 = ligne.insertCell(1);
-	colonne2.innerHTML += metric;
+	updateTable("neighbour");
+	updateTable("route");
+	updateTable("xroute");
+	recomputeNetwork();
+	redraw();
     }
 
     var svg, color, width, height, link, node, simulation;
@@ -417,36 +203,166 @@ function BabelWebV2() {
             .attr("class", "nodes")
             .selectAll("circle");
 
-	restart();
+	//redraw();
+	initEnd = true;
     }
 
-    function restart() {
-	node = node.data(nodes, function(d) { return d.id;});
+    var addrToRouterId, metric;
+
+    function recomputeNetwork() {
+	if(typeof routers[current] == 'undefined') {
+	    routers[current] = {
+		id: current,
+		metric: 0,
+	    };
+	}
+	
+	function first(array, f) {
+	    var i = 0, n = array.length, a = array[0], b;
+	    while (++i < n) {
+		if (f.call(array, a, b = array[i]) > 0) {
+		    a = b;
+		}
+	    }
+	    return a;
+	}
+
+	function insertKey(arr, obj) {
+	    for(var i=0; i<arr.length; i++) {
+		if (arr[i].key == obj.key) return arr;
+	    }
+	    arr.push(obj);
+	    return arr;
+	}
+
+	for (var r in routers) {
+	    routers[r].metric = undefined;
+	}
+	routers[current].metric = 0;
+
+	var neighToRouterMetric = {};
+	for (var route in babelDesc[current].route) {
+	    var r = babelDesc[current].route[route];
+	    var metric = r.metric;
+	    var refmetric = r.refmetric;
+
+	    if(!routers[r.id]) {
+		routers[r.id] = {
+		    id:r.id,
+		    metric:metric,
+		    via:r.via,
+		};
+	    } else {
+		if(routers[r.id].metric == undefined ||
+		   metric < routers[r.id].metric) {
+		    routers[r.id].metric = metric;
+		    routers[r.id].via = r.via;
+		}
+	    }
+
+	    if(!neighToRouterMetric[r.via])
+		neighToRouterMetric[r.via] = {};
+	    if(!neighToRouterMetric[r.via][r.id])
+		neighToRouterMetric[r.via][r.id] = { refmetric: refmetric };
+	    else
+		neighToRouterMetric[r.via][r.id].refmetric =
+		Math.min(neighToRouterMetric[r.via][r.id].refmetric, refmetric);
+	}
+	
+	addrToRouterId = {};
+	for(var n in neighToRouterMetric) {
+	    addrToRouterId[n] =
+		first(d3.entries(neighToRouterMetric[n]),
+		      function(a, b) {
+			  return a.value.refmetric -
+			      b.value.refmetric;
+		      }).key;
+	}
+
+	nodes = []; metrics = [];
+	for (var r in routers) {
+	    if(routers[r].metric == undefined)
+		delete routers[r];
+	    else {
+		nodes.push(routers[r]);
+		metrics.push({source:routers[current],
+			      target:routers[r],
+			      metric:routers[r].metric,
+			     });
+	    }
+	}
+	for (var n in neighToRouterMetric)
+	    for(var id in neighToRouterMetric[n])
+		metrics.push({source:routers[addrToRouterId[n]],
+			      target:routers[id],
+			      metric:neighToRouterMetric[n][id].refmetric});
+
+	links = [];
+	for(var r_key in babelDesc[current].route) {
+	    var r = babelDesc[current].route[r_key];
+	    if(r.metric == 65535)
+		continue;
+
+	    links.push({key: normalizeId(current),
+			source: routers[current],
+			target: routers[addrToRouterId[r.via]],
+			installed: true
+		       });
+	    
+	    insertKey(links, {
+		key: normalizeId(r.id + r.via + r.installed),
+		source: routers[addrToRouterId[r.via]],
+		target: routers[r.id],
+		installed: r.installed }
+		     );
+	    
+	    /*
+	    insertKey(links, {
+		key: normalizeId(r.id + r.via + r.installed),
+		path: [routers[current],
+		       routers[addrToRouterId[r.via]],
+		       routers[r.id]
+		      ],
+		installed: r.installed }
+		     );
+	    */
+	}
+    }
+
+    // nodes = {id, metric?, via?}
+    // links= {installed}
+
+    function redraw() {
+	node = node.data(nodes, function(d) {return d.id;});
 
 	node.exit().transition()
 	    .attr("r", 0)
-	   .remove();
+	    .remove();
+
+	function isNeighbour(id) {
+	    for(var n in addrToRouterId) {
+		if(addrToRouterId[n] == id)
+		    return true;
+	    }
+	    return false;
+	}
 
         node = node.enter().append("circle")
+	    .attr("id", function(d) {return "node-"+normalizeId(d.id);})
             .attr("r", 5)
             .attr("fill", function(d) {
-		switch(d.group) {
-		case current_g:
-		    return colors.current;
-		case neighbour_g:
-		    return colors.neighbour;
-		case other:
-		    return colors.losslessWireless;
-		}
+		return (d.id === current) ?
+		    colors.current : (isNeighbour(d.id) ?
+				      colors.neighbour : colors.other);
 	    })
             .call(d3.drag()
-                  .on("start", dragstarted)
-                  .on("drag", dragged)
-                  .on("end", dragended))
+		  .on("start", dragstarted)
+		  .on("drag", dragged)
+		  .on("end", dragended))
 	    .merge(node);
 
 	link = link
-            .data(links, function(d) {
+            .data(links, function(d) { // ?
 		return d.source.id + "-" + d.target.id;});
 
 	link.exit().transition()
@@ -461,7 +377,16 @@ function BabelWebV2() {
 		return function() { return d.target.y; }; })
 	    .remove();
 
-	link = link.enter().append("line").merge(link);
+	var show_all = d3.select("#show_all").property("checked");
+	link = link.enter().append("line")
+	    .attr("display", function(d) {
+		return (d.installed && d.metric != 65535) || show_all ?
+		    "inline" : "none"; })
+	    .attr("opacity", function(d) {return d.installed ? "1" : "0.3";})
+	    .attr("stroke", colors.route)
+	    .attr("stroke-dasharray", function(d) {
+		return d.installed ? "none" : "5,2"; })
+	    .merge(link);
 
 	simulation.force("link").links(links);
 	simulation.alpha(1).restart();
@@ -499,10 +424,74 @@ function BabelWebV2() {
 	d.fy = null;
     }
 
-    BBabelWebV2= {};
-    BabelWebV2.connect = connect;
-    //BabelWebV2.init = init;
-    BabelWebV2.initGraph = initGraph;
+    function normalizeId(s) {
+	var allowedChars = "0123456789abcdef";
+	var res = "";
+	for(var i = 0; i < s.length; i++) {
+	    var c = s.charAt(i);
+	    if (allowedChars.indexOf(c) != -1)
+		res += c;
+	}
+	return res;
+    }
 
-    return BabelWebV2;
+    function updateRow(d, name, headers) {
+	var tr = d3.select(this);
+	
+	var costColor = d3.scaleLog()
+	    .domain([0, 96, 256, 65535])
+	    .range([colors.wiredLink,
+		    colors.wiredLink,
+		    colors.losslessWireless,
+		    colors.unreachableNeighbour])
+	    .interpolate(d3.interpolateHcl);
+	
+	if(name == "route")
+	    tr.style("background-color",
+		     (d.value.metric == 65535 ? colors.unreachable :
+		      d.value.installed ? colors.installed :
+		      colors.uninstalled));
+	else if(name == "neighbour")
+	    tr.style("background-color", costColor(d.value.rxcost));
+	
+	var row = tr.selectAll("td")
+	    .data(headers.map(function(h){
+		if(h == "reach") {
+		    s = d.value[h].toString(16);
+		    for(; s.length < 4;)
+			s = "0" + s;
+		    return s;
+		}
+		return d.value[h];
+	    }));
+	row.text(function(d){return d;});
+	row.enter().append("td").text(function(d){return d;});
+    }
+
+    function updateTable(name) {
+	var table = d3.select("#"+name);
+	table.select("tr.loading").remove();
+	var headers = [];
+	table.selectAll("th").each(function() {
+	    headers.push(d3.select(this).text());
+	});
+	var rows = table.select("tbody").selectAll("tr")
+	    .data(d3.entries(babelDesc[current][name]), function(d){
+		if( typeof d == 'undefined' ) return null;
+		else return d.key;
+	    });
+	rows.enter().append("tr")
+	    .attr("id", function(d) {
+		return name + "-" + normalizeId(d.key); });
+	rows.exit().remove();
+	table.select("tbody")
+	    .selectAll("tr")
+	    .each(function(d){updateRow.call(this, d, name, headers); });
+    }
+
+    babelWebV2.connect = connect;
+    babelWebV2.initGraph = initGraph;
+    babelWebV2.updateCurrent = updateCurrent;
+
+    return babelWebV2;
 }
