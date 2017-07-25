@@ -17,6 +17,10 @@ import (
 
 type connectslice []string
 
+var myconnectlist connectslice
+var Listconduct = list.New()
+var Quitmain = make(chan struct{}, 2)
+
 func (i *connectslice) String() string {
 	return fmt.Sprintf("%s", *i)
 }
@@ -25,8 +29,6 @@ func (i *connectslice) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
-
-var myconnectlist connectslice
 
 func flagsInit(bwPort *string) int {
 
@@ -37,7 +39,7 @@ func flagsInit(bwPort *string) int {
 	flag.StringVar(bwPort, "bwport", ":8080", "babelweb Port")
 	flag.Parse()
 
-	if flag.NFlag() == 0 {
+	if len(myconnectlist) == 0 {
 		log.Println("connection to local node:")
 	} else {
 		fmt.Println("Here are the values")
@@ -55,71 +57,88 @@ func connection(updates chan parser.BabelUpdate, wg *sync.WaitGroup, bwPort *str
 	log.Println("lenghth %d", lenArg)
 	if lenArg == 0 {
 		log.Println("to connect  to %s", node)
-		go ConnectionNode(updates, node, wg)
+		go ConnectionNode(updates, node, wg, Quitmain)
 	} else {
 		go connectGroup(updates, node, wg)
 	}
 }
 
 func ConnectionNode(updates chan parser.BabelUpdate, node string,
-	wg *sync.WaitGroup) {
+	wg *sync.WaitGroup, quit chan struct{}) {
 	var conn net.Conn
 	var err error
+	exit := true
 	wg.Add(1)
+	defer wg.Done()
+	defer close(updates)
+
 	for {
-		log.Println("	Trying ", node)
-		for {
-			conn, err = net.Dial("tcp6", node)
+		select {
+		case _, q := <-quit:
+			if !q {
+				return
+			}
+		default:
+			log.Println("	Trying ", node)
+			for exit {
+				select {
+				case _, q := <-quit:
+					if !q {
+						return
+					}
+				default:
+					conn, err = net.Dial("tcp6", node)
+					if err != nil {
+						log.Println(err)
+						time.Sleep(time.Second * 5)
+					} else {
+						log.Println("test")
+						exit = false
+					}
+				}
+			}
+			log.Println("	Connected to", node)
+			fmt.Fprintf(conn, "monitor\n")
+			r := bufio.NewReader(conn)
+			s := parser.NewScanner(r)
+			err = ws.Db.Bd.Listen(s, updates)
+			conn.Close()
+			log.Println("Connection closed")
 			if err != nil {
 				log.Println(err)
-				time.Sleep(time.Second * 5)
-			} else {
-				break
+				return
+			}
+			ws.Db.Lock()
+			err = ws.Db.Bd.Clean(updates)
+			ws.Db.Unlock()
+			if err != nil {
+				log.Println(err)
+				return
 			}
 		}
-		log.Println("	Connected to", node)
-		fmt.Fprintf(conn, "monitor\n")
-		r := bufio.NewReader(conn)
-		s := parser.NewScanner(r)
-		err = ws.Db.Bd.Listen(s, updates)
-		conn.Close()
-		log.Println("Connection closed")
-		if err != nil {
-			log.Println(err)
-			wg.Done()
-			return
-		}
-		ws.Db.Lock()
-		err = ws.Db.Bd.Clean(updates)
-		ws.Db.Unlock()
-		if err != nil {
-			log.Println(err)
-			wg.Done()
-			return
-		}
 	}
-	wg.Done()
 }
 
-var Listconduct = list.New()
-
 func connectGroup(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup) {
+	var quitgroup = make(chan struct{}, 2)
+	var wgGroup sync.WaitGroup
 
-	var wg2 sync.WaitGroup
+	wg.Add(1)
+	defer close(updates)
+	defer wg.Done()
+	defer wgGroup.Wait()
+	defer close(quitgroup)
+
 	output := func(c chan parser.BabelUpdate) {
 		for n := range c {
 			updates <- n
 		}
-		//wg2.Done()
-	}
-	if Listconduct.Len() > 0 {
-		wg2.Add(Listconduct.Len())
 	}
 
 	for i := 0; i < len(myconnectlist); i++ {
 		conduct := make(chan parser.BabelUpdate, ws.ChanelSize)
 		Listconduct.PushBack(conduct)
-		go ConnectionNode(conduct, myconnectlist[i], wg)
+		go ConnectionNode(conduct, myconnectlist[i], &wgGroup, quitgroup)
 	}
 
 	cases := make([]reflect.SelectCase, Listconduct.Len())
@@ -131,20 +150,25 @@ func connectGroup(updates chan parser.BabelUpdate, node string, wg *sync.WaitGro
 
 	remaining := len(cases)
 	for remaining > 0 {
-		chosen, _, ok := reflect.Select(cases)
-		if !ok {
-			// The chosen channel has been closed
-			cases[chosen].Chan = reflect.ValueOf(nil)
-			remaining -= 1
-			continue
-		}
-		if find(chosen) != nil {
-			go output(find(chosen))
-		} else {
-			log.Println("null")
+		select {
+		case _, q := <-Quitmain:
+			if !q {
+				return
+			}
+		default:
+			chosen, _, ok := reflect.Select(cases)
+			if !ok {
+				cases[chosen].Chan = reflect.ValueOf(nil)
+				remaining -= 1
+				continue
+			}
+			if find(chosen) != nil {
+				output(find(chosen))
+			} else {
+				log.Println("null")
+			}
 		}
 	}
-	wg2.Wait()
 }
 
 func find(index int) chan parser.BabelUpdate {
@@ -160,6 +184,8 @@ func find(index int) chan parser.BabelUpdate {
 }
 
 func main() {
+
+	defer close(Quitmain)
 	log.Println("	--------launching server--------")
 	var bwPort string
 	var wg sync.WaitGroup
@@ -181,6 +207,5 @@ func main() {
 		log.Println(err)
 		return
 	}
-
 	wg.Wait()
 }
