@@ -47,7 +47,7 @@ func flagsInit(bwPort *string) int {
 			fmt.Printf("-%s\n", myconnectlist[i])
 		}
 	}
-	return flag.NFlag()
+	return len(myconnectlist)
 }
 
 func connection(updates chan parser.BabelUpdate, wg *sync.WaitGroup, bwPort *string) {
