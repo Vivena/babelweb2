@@ -32,7 +32,8 @@ func (i *connectslice) Set(value string) error {
 
 func flagsInit(bwPort *string) int {
 
-	flag.Var(&myconnectlist, "hp", "list of hostnames and portnums (shorthand)")
+	flag.Var(&myconnectlist, "hp",
+		"list of hostnames and portnums (shorthand)")
 	flag.Var(&myconnectlist, "hostport", "liste of hostnames and portnums")
 
 	flag.StringVar(bwPort, "b", ":8080", "babelweb Port (shorthand)")
@@ -42,13 +43,12 @@ func flagsInit(bwPort *string) int {
 	return len(myconnectlist)
 }
 
-func connection(updates chan parser.BabelUpdate, wg *sync.WaitGroup, bwPort *string) {
+func connection(updates chan parser.BabelUpdate,
+	wg *sync.WaitGroup, bwPort *string) {
 	var node string
 	node = "[::1]:33123"
 	var lenArg = flagsInit(bwPort)
-	log.Println("lenghth %d", lenArg)
 	if lenArg == 0 {
-		log.Println("to connect  to %s", node)
 		go ConnectionNode(updates, node, wg, Quitmain)
 	} else {
 		go connectGroup(updates, node, wg)
@@ -86,7 +86,6 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 						log.Println(err)
 						time.Sleep(time.Second * 5)
 					} else {
-						log.Println("test")
 						exit = false
 					}
 				}
@@ -95,7 +94,12 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 			fmt.Fprintf(conn, "monitor\n")
 			r := bufio.NewReader(conn)
 			s := parser.NewScanner(r)
-			err = ws.Db.Bd.Listen(s, updates)
+			listen, err := ws.Db.Bd.GetParser(s)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			listen(updates)
 			conn.Close()
 			log.Println("Connection closed")
 			if err != nil {
@@ -114,7 +118,8 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 }
 
 /*-----    connection to multiple routers    ----*/
-func connectGroup(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup) {
+func connectGroup(updates chan parser.BabelUpdate, node string,
+	wg *sync.WaitGroup) {
 	var quitgroup = make(chan struct{}, 2)
 	var wgGroup sync.WaitGroup
 
@@ -134,13 +139,15 @@ func connectGroup(updates chan parser.BabelUpdate, node string, wg *sync.WaitGro
 	for i := 0; i < len(myconnectlist); i++ {
 		conduct := make(chan parser.BabelUpdate, ws.ChanelSize)
 		Listconduct.PushBack(conduct)
-		go ConnectionNode(conduct, myconnectlist[i], &wgGroup, quitgroup)
+		go ConnectionNode(conduct, myconnectlist[i],
+			&wgGroup, quitgroup)
 	}
 
 	cases := make([]reflect.SelectCase, Listconduct.Len())
 	var i = 0
 	for e := Listconduct.Front(); e != nil; e = e.Next() {
-		cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv, Chan: reflect.ValueOf(e.Value)}
+		cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv,
+			Chan: reflect.ValueOf(e.Value)}
 		i++
 	}
 
@@ -189,7 +196,6 @@ func main() {
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	connection(updates, &wg, &bwPort)
 
-	log.Println("valeur bxport%d", bwPort)
 	ws.Db.Bd = parser.NewBabelDesc()
 	bcastGrp := ws.NewListenerGroupe()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
