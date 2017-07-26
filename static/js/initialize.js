@@ -6,6 +6,7 @@ function babelWebV2() {
     var routers = {};
     var nodes = [];
     var links = [];
+    var metrics = [];
 
     var palette = {
 	"gray" : "#777"
@@ -60,43 +61,11 @@ function babelWebV2() {
             };
 	};
     }
-
-    /*
-    var data = {router: "r1",
-		name: "woody",
-		table: "neighbour",
-		action: "add",
-		id: "55c47b990d90",
-		data: {
-		    "address": "fe80::e046:9aff:fe4e:912e",
-		    "if": "enp3s0",
-		    "reach": 6615,
-		    "rxcost": 96,
-		    "txcost": 96,
-		    "cost": 96,
-		},
-	       };
-    convertJSON(2);
-    data = {router: "r9",
-	    name: "buzz",
-		table: "neighbour",
-		action: "add",
-		id: "55c47b990d91",
-		data: {
-		    "address": "hohoho",
-		    "if": "enp2s0",
-		    "reach": 66615,
-		    "rxcost": 96,
-		    "txcost": 96,
-		    "cost": 96,
-		},
-	       };
-
-    convertJSON(2);*/
     
     function convertJSON(event) {
 	var data = JSON.parse(event.data);
-
+	//console.log(event.data);
+	
 	if(current === "unknown")
 	    //current = data.router;
 	    current = "r1";
@@ -120,15 +89,16 @@ function babelWebV2() {
 	    //delete babelDesc[data.router][data.table][data.id];
 	    delete babelDesc["r1"][data.table][data.id];
 	else {
-	    for(var key in data.data)
+	    for(var key in data.data) {
 		//babelDesc[data.router][data.table][data.id][key] =
 		babelDesc["r1"][data.table][data.id][key] =
-		data.data[key];
+		    data.data[key];
+	    }
 	}
 
 	updateSwitch();
 	//if(data.router === current)
-	if("r1" === current)
+	if("r1" == current)
 	    updateCurrent(current);
     }
 
@@ -139,7 +109,7 @@ function babelWebV2() {
 	    .attr("value", function(d) { return d; })
 	    .text(function (d) { return babelDesc[d].self.name; });
 	options.exit().remove();
-	d3.selectAll("#nodes option").sort(function (x, y) {
+	d3.selectAll("#nodes option").sort(function(x, y) {
 	    if(x === "unknown")
 		return -1;
 	    else
@@ -166,19 +136,33 @@ function babelWebV2() {
 	    routers = {};
 	
 	current = newCurrent;
-
 	updateTable("neighbour");
 	updateTable("route");
 	updateTable("xroute");
 	recomputeNetwork();
 	redraw();
+	
     }
 
-    var svg, color, width, height, link, node, simulation;
+    var svg, color, width, height, simulation, vis, k = 1;
+
+    function zoomOut(factor) {
+	k /= factor;
+	redraw();
+    }
+
+    function zoomIn(factor) {
+	zoomOut(1/factor);
+    }
+
+    function oneToOne() {
+	zoomOut(k);
+    }
 
     function initGraph() {
 	width = 600;
-	height = 300;
+	height = 400;
+	
 	vis = d3.select("#fig")
 	    .insert("svg:svg", ".legend")
 	    .attr("width", width)
@@ -189,31 +173,25 @@ function babelWebV2() {
         width = +svg.attr("width");
         height = +svg.attr("height");
 	color = d3.scaleOrdinal(d3.schemeCategory20);
+	
 	simulation = d3.forceSimulation()
-            .force("link", d3.forceLink().id(function(d) { return d.id; }))
-            .force("charge", d3.forceManyBody())
-            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("link", d3.forceLink())
+            .force("charge", d3.forceManyBody().strength(-500))
 	    .on("tick", ticked);
 
-	link = svg.append("g")
-            .attr("class", "links")
-            .selectAll("line");
-
-	node = svg.append("g")
-            .attr("class", "nodes")
-            .selectAll("circle");
-
-	//redraw();
 	initEnd = true;
     }
 
-    var addrToRouterId, metric;
+    var addrToRouterId;
 
     function recomputeNetwork() {
 	if(typeof routers[current] == 'undefined') {
 	    routers[current] = {
 		id: current,
 		metric: 0,
+		fx: width/2,
+		fy: height/2,
+		fixed: true
 	    };
 	}
 	
@@ -229,7 +207,7 @@ function babelWebV2() {
 
 	function insertKey(arr, obj) {
 	    for(var i=0; i<arr.length; i++) {
-		if (arr[i].key == obj.key) return arr;
+		if(arr[i].key == obj.key) return arr;
 	    }
 	    arr.push(obj);
 	    return arr;
@@ -241,7 +219,7 @@ function babelWebV2() {
 	routers[current].metric = 0;
 
 	var neighToRouterMetric = {};
-	for (var route in babelDesc[current].route) {
+	for(var route in babelDesc[current].route) {
 	    var r = babelDesc[current].route[route];
 	    var metric = r.metric;
 	    var refmetric = r.refmetric;
@@ -250,7 +228,7 @@ function babelWebV2() {
 		routers[r.id] = {
 		    id:r.id,
 		    metric:metric,
-		    via:r.via,
+		    via:r.via
 		};
 	    } else {
 		if(routers[r.id].metric == undefined ||
@@ -302,21 +280,7 @@ function babelWebV2() {
 	    var r = babelDesc[current].route[r_key];
 	    if(r.metric == 65535)
 		continue;
-
-	    links.push({key: normalizeId(current),
-			source: routers[current],
-			target: routers[addrToRouterId[r.via]],
-			installed: true
-		       });
 	    
-	    insertKey(links, {
-		key: normalizeId(r.id + r.via + r.installed),
-		source: routers[addrToRouterId[r.via]],
-		target: routers[r.id],
-		installed: r.installed }
-		     );
-	    
-	    /*
 	    insertKey(links, {
 		key: normalizeId(r.id + r.via + r.installed),
 		path: [routers[current],
@@ -325,60 +289,92 @@ function babelWebV2() {
 		      ],
 		installed: r.installed }
 		     );
-	    */
 	}
     }
 
-    // nodes = {id, metric?, via?}
-    // links= {installed}
-
     function redraw() {
-	node = node.data(nodes, function(d) {return d.id;});
-
-	node.exit().transition()
-	    .attr("r", 0)
-	    .remove();
-
 	function isNeighbour(id) {
-	    for(var n in addrToRouterId) {
-		if(addrToRouterId[n] == id)
+	    for(var n in babelDesc[current].neighbour)
+		if(addrToRouterId[babelDesc[current].neighbour[n].address] ==
+		   id)
 		    return true;
-	    }
 	    return false;
 	}
 
-        node = node.enter().append("circle")
+	var scale = d3.select("#logscale").property("checked") ?
+	    d3.scaleLog().domain([1,65535]).range([0,height]) :
+	    d3.scaleLinear().domain([0,65535]).range([0,10000]);
+
+	simulation.force("link")
+	    .links(metrics)
+	    .strength(1)
+	    .distance(function(d) {return d.metric * k;});
+
+	var node = vis.selectAll("circle.node")
+	    .data(nodes);
+	node.enter().append("svg:circle")
+	    .attr("class", "node")
+	    .attr("r", 5)
+	    .attr("stroke", "white")
 	    .attr("id", function(d) {return "node-"+normalizeId(d.id);})
-            .attr("r", 5)
-            .attr("fill", function(d) {
-		return (d.id === current) ?
-		    colors.current : (isNeighbour(d.id) ?
-				      colors.neighbour : colors.other);
-	    })
-            .call(d3.drag()
+	    .call(d3.drag()
 		  .on("start", dragstarted)
 		  .on("drag", dragged)
 		  .on("end", dragended))
-	    .merge(node);
+	    .append("svg:title");
+	node.exit().remove();
+	vis.selectAll("circle")
+	    .style("fill", function(d) {
+		return (d.id == current) ?
+		    colors.current : (isNeighbour(d.id) ?
+				      colors.neighbour : colors.other);
+	    });
 
-	link = link
-            .data(links, function(d) { // ?
-		return d.source.id + "-" + d.target.id;});
+	var route_path = d3.line()
+	    .x(function(d) {
+		if(typeof d == 'undefined') return null;
+		else return d.x;
+	    })
+	    .y(function(d) {
+		if(typeof d == 'undefined') return null;
+		else return d.y;
+	    })
+	    .curve();
 
-	link.exit().transition()
-	    .attr("stroke-opacity", 0)
-	    .attrTween("x1", function(d) {
-		return function() { return d.source.x; }; })
-	    .attrTween("x2", function(d) {
-		return function() { return d.target.x; }; })
-	    .attrTween("y1", function(d) {
-		return function() { return d.source.y; }; })
-	    .attrTween("y2", function(d) {
-		return function() { return d.target.y; }; })
-	    .remove();
+	var link = vis.selectAll("path.route")
+	    .data(links);
+	link.enter().insert("svg:path", "circle.node")
+	    .attr("class", "route")
+	    .attr("stroke", colors.route)
+	    .attr("fill", "none")
+	    .attr("id", function(d) { return "link-"+d.key; })
+	    .attr("d", function(d) { return route_path(d.path); });
+	link.exit().remove();
+
+	simulation.alpha(1).restart();
+	simulation.nodes(nodes);
+    }
+
+    function ticked() {
+
+	vis.selectAll("circle.node")
+	    .attr("cx", function(d) {return d.x; })
+	    .attr("cy", function(d) {return d.y; });
+
+	
+	var route_path = d3.line()
+	    .x(function(d) {
+		if(typeof d == 'undefined') return null;
+		else return d.x;
+	    })
+	    .y(function(d) {
+		if(typeof d == 'undefined') return null;
+		else return d.y;
+	    })
+	    .curve(d3.curveLinear);
 
 	var show_all = d3.select("#show_all").property("checked");
-	link = link.enter().append("line")
+	vis.selectAll("path.route")
 	    .attr("display", function(d) {
 		return (d.installed && d.metric != 65535) || show_all ?
 		    "inline" : "none"; })
@@ -386,26 +382,12 @@ function babelWebV2() {
 	    .attr("stroke", colors.route)
 	    .attr("stroke-dasharray", function(d) {
 		return d.installed ? "none" : "5,2"; })
-	    .merge(link);
-
-	simulation.force("link").links(links);
-	simulation.alpha(1).restart();
-	simulation.nodes(nodes);
-    }
-
-    function ticked() {
-	link
-	    .attr("x1", function(d) { return d.source.x; })
-	    .attr("y1", function(d) { return d.source.y; })
-	    .attr("x2", function(d) { return d.target.x; })
-	    .attr("y2", function(d) { return d.target.y; });
-
-	node
-	    .attr("cx", function(d) { return d.x; })
-	    .attr("cy", function(d) { return d.y; });
+	    .attr("d", function(d) { return route_path(d.path); });
     }
 
     function dragstarted(d) {
+	if(d.id == current)
+	    return;
 	if (!d3.event.active)
 	    simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
@@ -413,11 +395,15 @@ function babelWebV2() {
     }
 
     function dragged(d) {
+	if(d.id == current)
+	    return;
 	d.fx = d3.event.x;
 	d.fy = d3.event.y;
     }
 
     function dragended(d) {
+	if(d.id == current)
+	    return;
 	if (!d3.event.active)
 	    simulation.alphaTarget(0);
 	d.fx = null;
@@ -492,6 +478,10 @@ function babelWebV2() {
     babelWebV2.connect = connect;
     babelWebV2.initGraph = initGraph;
     babelWebV2.updateCurrent = updateCurrent;
+    babelWebV2.redraw = redraw;
+    babelWebV2.zoomIn = zoomIn;
+    babelWebV2.zoomOut = zoomOut;
+    babelWebV2.oneToOne = oneToOne;
 
     return babelWebV2;
 }

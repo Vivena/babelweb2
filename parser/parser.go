@@ -301,6 +301,8 @@ func (t Table) Flush(id Id) error {
 }
 
 type BabelUpdate struct {
+	name    Id
+	router  Id
 	action  Id
 	tableId Id
 	entryId Id
@@ -308,6 +310,8 @@ type BabelUpdate struct {
 }
 
 type SBabelUpdate struct {
+	Name      Id                 `json:"name"`
+	Router    Id                 `json:"router"`
 	Action    Id                 `json:"action"`
 	TableId   Id                 `json:"table"`
 	EntryId   Id                 `json:"id"`
@@ -328,8 +332,8 @@ func (bd BabelDesc) Iter(f func(BabelUpdate) error) error {
 }
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
-	s_upd := SBabelUpdate{upd.action, upd.tableId, upd.entryId,
-		make(map[Id]interface{})}
+	s_upd := SBabelUpdate{upd.name, upd. router, upd.action,
+		upd.tableId, upd.entryId, make(map[Id]interface{})}
 	for id, ev := range upd.entry {
 		switch t := ev.data.(type) {
 		case *net.IPNet:
@@ -372,7 +376,8 @@ func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
 	if err != io.EOF && err != errEOL {
 		return emptyUpdate, err
 	}
-	return BabelUpdate{Id(w), Id(table_id), Id(entry_id), new_entry}, err
+	return BabelUpdate{action: Id(w), tableId: Id(table_id),
+		entryId: Id(entry_id), entry: new_entry}, err
 }
 
 func (bd *BabelDesc) Update(upd BabelUpdate) error {
@@ -482,6 +487,36 @@ func NewScanner(r io.Reader) *Scanner {
 	s := bufio.NewScanner(r)
 	s.Split(split)
 	return &Scanner{*s}
+}
+
+func (t *BabelDesc) GetParser(s *Scanner) (
+	(func(*BabelDesc, chan BabelUpdate) error), error) {
+	e := NewEntry()
+	e.AddField("BABEL", ParseString)
+	e.AddField("version", ParseString)
+	e.AddField("host", ParseString)
+	e.AddField("my-id", ParseString)
+	err := e.Parse(s)
+	if err != nil && err != io.EOF && err != errEOL {
+		return nil, err
+	}
+	return func(t *BabelDesc, updChan chan BabelUpdate) error {
+		for {
+			upd, err := t.ParseAction(s)
+			if err != nil && err != io.EOF && err != errEOL {
+				return err
+			}
+			if err == io.EOF {
+				break
+			}
+			if upd.action != emptyUpdate.action {
+				upd.router = e["my-id"].data.(Id)
+				upd.name = e["host"].data.(Id)
+				updChan <- upd
+			}
+		}
+		return nil
+	}, nil
 }
 
 func (t *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {

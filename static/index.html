@@ -32,15 +32,14 @@
             <input type="checkbox" id="show_all" checked onClick="babel.redisplay();" >
             <label for="show_all">Show uninstalled routes</label>
             <br>
-            <input type="checkbox" id="logscale" checked onClick="babel.redisplay();" >
+            <input type="checkbox" id="logscale" checked onClick="babelweb.redraw();" >
             <label for="logscale">Logarithmic scale</label>
             <br>
-            <input type="button" value="Randomize" onClick="babel.randomizeNodes();" >
-            <input type="button" value="Zoom in" onClick="babel.zoomIn(1.5);" >
-            <input type="button" value="Zoom out" onClick="babel.zoomOut(1.5);" >
+            <input type="button" value="1:1" onClick="babelweb.oneToOne();" >
+            <input type="button" value="Zoom in" onClick="babelweb.zoomIn(1.2);" >
+            <input type="button" value="Zoom out" onClick="babelweb.zoomOut(1.2);" >
          </p>
          <p>
-            Updates : <span id="updates">0</span>.
             State: <span id="state" class="bad">disconnected</span>.
          </p>
          <h2>Neighbours</h2>
