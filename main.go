@@ -39,14 +39,6 @@ func flagsInit(bwPort *string) int {
 	flag.StringVar(bwPort, "bwport", ":8080", "babelweb Port")
 	flag.Parse()
 
-	if len(myconnectlist) == 0 {
-		log.Println("connection to local node:")
-	} else {
-		fmt.Println("Here are the values")
-		for i := 0; i < len(myconnectlist); i++ {
-			fmt.Printf("-%s\n", myconnectlist[i])
-		}
-	}
 	return len(myconnectlist)
 }
 
@@ -67,8 +59,10 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 	wg *sync.WaitGroup, quit chan struct{}) {
 	var conn net.Conn
 	var err error
+
 	exit := true
 	wg.Add(1)
+
 	defer wg.Done()
 	defer close(updates)
 
@@ -119,11 +113,13 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 	}
 }
 
+/*-----    connection to multiple routers    ----*/
 func connectGroup(updates chan parser.BabelUpdate, node string, wg *sync.WaitGroup) {
 	var quitgroup = make(chan struct{}, 2)
 	var wgGroup sync.WaitGroup
 
 	wg.Add(1)
+
 	defer close(updates)
 	defer wg.Done()
 	defer wgGroup.Wait()
@@ -189,10 +185,11 @@ func main() {
 	log.Println("	--------launching server--------")
 	var bwPort string
 	var wg sync.WaitGroup
+
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	connection(updates, &wg, &bwPort)
-	log.Println("valeur bxport%d", bwPort)
 
+	log.Println("valeur bxport%d", bwPort)
 	ws.Db.Bd = parser.NewBabelDesc()
 	bcastGrp := ws.NewListenerGroupe()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
@@ -202,6 +199,7 @@ func main() {
 	http.Handle("/initialize.js", http.FileServer(http.Dir("static/js")))
 	http.Handle("/d3/d3.js", http.FileServer(http.Dir("static/js")))
 	http.Handle("/ws", ws)
+
 	err := http.ListenAndServe(bwPort, nil)
 	if err != nil {
 		log.Println(err)
