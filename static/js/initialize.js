@@ -173,7 +173,7 @@ function babelWebV2() {
 	updateTable("xroute");
 	recomputeNetwork();
 	redraw();
-	
+
     }
 
     var svg, color, width, height, simulation, vis, k = 1;
@@ -191,10 +191,24 @@ function babelWebV2() {
 	zoomOut(k);
     }
 
+    function initLegend() {
+       for(id in colors) {
+         d3.selectAll(".legend-"+id)
+           .append("svg:svg")
+           .attr("width", 10)
+           .attr("height", 10)
+           .attr("class", "legend-dot")
+           .append("svg:circle")
+           .attr("cx", 5).attr("cy", 5).attr("r", 5)
+           .attr("stroke-width", 0)
+           .attr("fill",colors[id]);
+       }
+   }
+
     function initGraph() {
 	width = 600;
 	height = 400;
-	
+
 	vis = d3.select("#fig")
 	    .insert("svg:svg", ".legend")
 	    .attr("width", width)
@@ -205,7 +219,7 @@ function babelWebV2() {
         width = +svg.attr("width");
         height = +svg.attr("height");
 	color = d3.scaleOrdinal(d3.schemeCategory20);
-	
+
 	simulation = d3.forceSimulation()
             .force("link", d3.forceLink())
             .force("charge", d3.forceManyBody().strength(-500))
@@ -312,7 +326,7 @@ function babelWebV2() {
 	    var r = babelDesc[current].route[r_key];
 	    if(r.metric == 65535)
 		continue;
-	    
+
 	    insertKey(links, {
 		key: normalizeId(r.id + r.via + r.installed),
 		path: [routers[current],
@@ -393,7 +407,7 @@ function babelWebV2() {
 	    .attr("cx", function(d) {return d.x; })
 	    .attr("cy", function(d) {return d.y; });
 
-	
+
 	var route_path = d3.line()
 	    .x(function(d) {
 		if(typeof d == 'undefined') return null;
@@ -508,6 +522,7 @@ function babelWebV2() {
     }
 
     babelWebV2.connect = connect;
+    babelWebV2.initLegend =  initLegend;
     babelWebV2.initGraph = initGraph;
     babelWebV2.updateCurrent = updateCurrent;
     babelWebV2.redraw = redraw;

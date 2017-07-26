@@ -115,20 +115,9 @@
         </table>
 
         <h2>How to get BabelWeb?</h2>
-        <pre>  git clone <a href="http://git.wifi.pps.univ-paris-diderot.fr/?p=babelweb.git;a=summary">git://git.wifi.pps.univ-paris-diderot.fr/babelweb.git</a></pre>
-        <p>There is also a <a href="http://github.com/kerneis/babelweb">github mirror</a>.
-        </p>
+        <pre>  git clone <a href="https://github.com/Vivena/babelweb2.git">github.com/Vivena/babelweb2.git</a></pre>
 
         <hr>
-        <p>
-            <a href="http://gabriel.kerneis.info/software/babelweb"
-        title="Babelweb homepage">BabelWeb</a> is proudly brought to you by <a
-            href="http://gabriel.kerneis.info/">Gabriel Kerneis</a>.
-        It is inspired by BabelTool, a Java software by <a
-            href="http://www-sop.inria.fr/members/Pejman.Attar/">Pejman Attar</a> and Alexis
-        Roso.  Many thanks to Didier Gillet who coined the name.
-        </p>
-
         <br>
         <br>
         <p id="test"></p>
@@ -140,6 +129,7 @@
         var socketWarper = {socket: null}
           var babelweb  = babelWebV2();
           window.onload = function() {
+               babelweb.initLegend();
 	           babelweb.initGraph();
               babelweb.connect(socketWarper);
           }

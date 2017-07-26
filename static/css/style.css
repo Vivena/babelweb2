@@ -16,6 +16,17 @@ margin: 10px;
 .loading {font-style: italic ; }
 
 h2 { clear: both; }
+h1
+{
+  font-size: 40px;
+  font-family:"Segoe print", Arial, Helvetica, sans-serif;
+  color: #dd0000;
+  margin:16px auto;
+  font-weight:lighter;
+  box-shadow:none;
+  text-align:center;
+  display:block;
+}
 
 #fig {
         width: 630px;
