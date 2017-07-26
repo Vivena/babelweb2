@@ -490,17 +490,19 @@ func NewScanner(r io.Reader) *Scanner {
 }
 
 func (t *BabelDesc) GetParser(s *Scanner) (
-	(func(*BabelDesc, chan BabelUpdate) error), error) {
+	(func(chan BabelUpdate) error), error) {
 	e := NewEntry()
 	e.AddField("BABEL", ParseString)
 	e.AddField("version", ParseString)
 	e.AddField("host", ParseString)
 	e.AddField("my-id", ParseString)
-	err := e.Parse(s)
-	if err != nil && err != io.EOF && err != errEOL {
-		return nil, err
+	for e["my-id"].data == nil || e["host"].data == nil {
+		err := e.Parse(s)	
+		if err != nil && err != io.EOF && err != errEOL {
+			return nil, err
+		}
 	}
-	return func(t *BabelDesc, updChan chan BabelUpdate) error {
+	return func(updChan chan BabelUpdate) error {
 		for {
 			upd, err := t.ParseAction(s)
 			if err != nil && err != io.EOF && err != errEOL {
@@ -510,8 +512,8 @@ func (t *BabelDesc) GetParser(s *Scanner) (
 				break
 			}
 			if upd.action != emptyUpdate.action {
-				upd.router = e["my-id"].data.(Id)
-				upd.name = e["host"].data.(Id)
+				upd.router = Id(e["my-id"].data.(string))
+				upd.name = Id(e["host"].data.(string))
 				updChan <- upd
 			}
 		}
