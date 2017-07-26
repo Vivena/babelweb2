@@ -27,7 +27,7 @@
               <option value="unknown" selected>none</option>
             </select>
             <br>
-            <input type="checkbox" id="show_all" checked onClick="babel.redisplay();" >
+            <input type="checkbox" id="show_all" checked onClick="babelweb.redraw();" >
             <label for="show_all">Show uninstalled routes</label>
             <br>
             <input type="checkbox" id="logscale" checked onClick="babelweb.redraw();" >
@@ -115,8 +115,10 @@
         </table>
 
         <h2>How to get BabelWeb?</h2>
+	<h5>Go tool</h5>
+	<pre>  go get github.com/Vivena/babelweb2<br>  go install github.com/Vivena/babelweb2</pre>
+	<h5>Git</h5>
         <pre>  git clone <a href="https://github.com/Vivena/babelweb2.git">github.com/Vivena/babelweb2.git</a></pre>
-
         <hr>
         <br>
         <br>
