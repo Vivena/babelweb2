@@ -259,6 +259,10 @@ type BabelDesc struct {
 	ts   map[Id](Table)
 }
 
+func (bd *BabelDesc) Id() Id {
+	return bd.id
+}
+
 func (bd *BabelDesc) String() string {
 	var s string
 	for id, t := range bd.ts {
@@ -313,6 +317,10 @@ type BabelUpdate struct {
 	entry   Entry
 }
 
+func (u BabelUpdate) Id() Id {
+	return u.router
+}
+
 type SBabelUpdate struct {
 	Name      Id                 `json:"name"`
 	Router    Id                 `json:"router"`
@@ -336,7 +344,7 @@ func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 	return nil
 }
 
-func (upd BabelUpdate) ToS() SBabelUpdate {
+func (upd BabelUpdate) ToSUpdate() SBabelUpdate {
 	s_upd := SBabelUpdate{upd.name, upd.router, upd.action,
 		upd.tableId, upd.entryId, make(map[Id]interface{})}
 	for id, ev := range upd.entry {
@@ -494,7 +502,7 @@ func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{*s}
 }
 
-func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
+func (bd *BabelDesc) Fill(s *Scanner) error {
 	e := NewEntry()
 	e.AddField("BABEL", ParseString)
 	e.AddField("version", ParseString)
@@ -508,6 +516,10 @@ func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	}
 	bd.id = Id(e["my-id"].data.(string))
 	bd.name = Id(e["host"].data.(string))
+	return nil
+}
+
+func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	for {
 		upd, err := bd.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {

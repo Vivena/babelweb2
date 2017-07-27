@@ -22,7 +22,15 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-var Db dataBase
+var Db map[parser.Id]dataBase
+
+func Init() {
+	Db = make(map[parser.Id]dataBase)
+}
+
+func AddDesc(bd *parser.BabelDesc) {
+	Db[bd.Id()] = dataBase{Bd: bd, M: new(sync.Mutex)}
+}
 
 type Message struct {
 	Action  string `json:"action"`
@@ -33,7 +41,7 @@ type Message struct {
 // type Message map[string]interface{}
 
 type dataBase struct {
-	sync.Mutex
+	M *sync.Mutex
 	Bd *parser.BabelDesc
 }
 
@@ -56,22 +64,20 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroupe,
 			wg.Done()
 			return
 		}
-		if !(Db.Bd.CheckUpdate(update)) {
-			// log.Println("not sending : ", update)
+		if !(Db[update.Id()].Bd.CheckUpdate(update)) {
 			continue
 		}
 		// log.Println("sending : ", update)
-		Db.Lock()
-		err := Db.Bd.Update(update)
+		Db[update.Id()].M.Lock()
+		err := Db[update.Id()].Bd.Update(update)
 		if err != nil {
 			log.Println(err)
 		}
-		Db.Unlock()
-		t := update.ToS()
+		Db[update.Id()].M.Unlock()
+		t := update.ToSUpdate()
 		g.Iter(func(l *Listener) {
 			l.conduct <- t
 		})
-		//TODO unlock()
 	}
 }
 
@@ -184,19 +190,20 @@ func Handler(l *Listenergroupe) http.Handler {
 			return
 		}
 		log.Println("    Sending the database to the new client")
-		Db.Lock()
-		Db.Bd.Iter(func(bu parser.BabelUpdate) error {
-			sbu := bu.ToS()
-			err := conn.WriteJSON(sbu)
-			if err != nil {
-				log.Println(err)
-			}
-			return err
-		})
-
+		for router := range Db {
+			Db[router].M.Lock()
+			Db[router].Bd.Iter(func(bu parser.BabelUpdate) error {
+				sbu := bu.ToSUpdate()
+				err := conn.WriteJSON(sbu)
+				if err != nil {
+					log.Println(err)
+				}
+				return err
+			})
+			Db[router].M.Unlock()
+		}
 		updates := NewListener()
 		l.Push(updates)
-		Db.Unlock()
 		defer l.Flush(updates)
 
 		var telnet telnetWarper
