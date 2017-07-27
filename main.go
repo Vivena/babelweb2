@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"reflect"
 	"sync"
 	"time"
 )
@@ -99,7 +98,7 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 			bd.Fill(s)
 			ws.AddDesc(bd)
 			ws.Db[bd.Id()].Bd.Listen(s, updates)
-			
+
 			conn.Close()
 			log.Println("Connection closed")
 			if err != nil {
@@ -120,56 +119,14 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 /*-----    connection to multiple routers    ----*/
 func connectGroup(updates chan parser.BabelUpdate, node string,
 	wg *sync.WaitGroup) {
+
 	var quitgroup = make(chan struct{}, 2)
 	var wgGroup sync.WaitGroup
-
-	wg.Add(1)
-
-	defer close(updates)
-	defer wg.Done()
-	defer wgGroup.Wait()
-	defer close(quitgroup)
-
-	output := func(c chan parser.BabelUpdate) {
-		updates <- (<- c)
-	}
-
 	for i := 0; i < len(myconnectlist); i++ {
-		conduct := make(chan parser.BabelUpdate, ws.ChanelSize)
-		Listconduct.PushBack(conduct)
-		go ConnectionNode(conduct, myconnectlist[i],
+		go ConnectionNode(updates, myconnectlist[i],
 			&wgGroup, quitgroup)
 	}
 
-	cases := make([]reflect.SelectCase, Listconduct.Len())
-	var i = 0
-	for e := Listconduct.Front(); e != nil; e = e.Next() {
-		cases[i] = reflect.SelectCase{Dir: reflect.SelectRecv,
-			Chan: reflect.ValueOf(e.Value)}
-		i++
-	}
-
-	remaining := len(cases)
-	for remaining > 0 {
-		select {
-		case _, q := <-Quitmain:
-			if !q {
-				return
-			}
-		default:
-			chosen, _, ok := reflect.Select(cases)
-			if !ok {
-				cases[chosen].Chan = reflect.ValueOf(nil)
-				remaining -= 1
-				continue
-			}
-			if find(chosen) != nil {
-				output(find(chosen))
-			} else {
-				log.Println("null")
-			}
-		}
-	}
 }
 
 func find(index int) chan parser.BabelUpdate {
