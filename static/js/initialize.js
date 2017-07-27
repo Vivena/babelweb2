@@ -137,6 +137,12 @@ function babelWebV2() {
 
     function zoomOut(factor) {
 	k /= factor;
+
+	if(k == 1)
+	    d3.select("#oto") .attr("disabled", true);
+	else
+	    d3.select("#oto") .attr("disabled", null);
+	
 	redraw();
     }
 
@@ -303,10 +309,6 @@ function babelWebV2() {
 		    return true;
 	    return false;
 	}
-
-	var scale = d3.select("#logscale").property("checked") ?
-	    d3.scaleLog().domain([1,65535]).range([0,height]) :
-	    d3.scaleLinear().domain([0,65535]).range([0,10000]);
 
 	simulation.force("link")
 	    .links(metrics)

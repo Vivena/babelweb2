@@ -30,10 +30,7 @@
             <input type="checkbox" id="show_all" checked onClick="babelweb.redraw();" >
             <label for="show_all">Show uninstalled routes</label>
             <br>
-            <input type="checkbox" id="logscale" checked onClick="babelweb.redraw();" >
-            <label for="logscale">Logarithmic scale</label>
-            <br>
-            <input type="button" value="1:1" onClick="babelweb.oneToOne();" >
+            <input type="button" id="oto" value="1:1" disabled="disabled" onClick="babelweb.oneToOne();" >
             <input type="button" value="Zoom in" onClick="babelweb.zoomIn(1.2);" >
             <input type="button" value="Zoom out" onClick="babelweb.zoomOut(1.2);" >
          </p>
