@@ -94,16 +94,22 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 			fmt.Fprintf(conn, "monitor\n")
 			r := bufio.NewReader(conn)
 			s := parser.NewScanner(r)
-			ws.Db.Bd.Listen(s, updates)
+
+			//ws.Db.Bd.Listen(s, updates)
+			bd := parser.NewBabelDesc()
+			bd.Fill(s)
+			ws.AddDesc(bd)
+			ws.Db[bd.Id()].Bd.Listen(s, updates)
+			
 			conn.Close()
 			log.Println("Connection closed")
 			if err != nil {
 				log.Println(err)
 				return
 			}
-			ws.Db.Lock()
-			err = ws.Db.Bd.Clean(updates)
-			ws.Db.Unlock()
+			ws.Db[bd.Id()].M.Lock()
+			err = ws.Db[bd.Id()].Bd.Clean(updates)
+			ws.Db[bd.Id()].M.Unlock()
 			if err != nil {
 				log.Println(err)
 				return
@@ -183,6 +189,8 @@ func find(index int) chan parser.BabelUpdate {
 
 func main() {
 
+	ws.Init()
+	
 	defer close(Quitmain)
 	log.Println("	--------launching server--------")
 	var bwPort string
@@ -191,8 +199,9 @@ func main() {
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	connection(updates, &wg, &bwPort)
 
-	ws.Db.Bd = parser.NewBabelDesc()
-	bcastGrp := ws.NewListenerGroupe()
+	//ws.Db.Bd = parser.NewBabelDesc()
+	
+	bcastGrp := ws.NewListenerGroup()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
 	ws := ws.Handler(bcastGrp)
 	http.Handle("/", http.FileServer(http.Dir("static/")))

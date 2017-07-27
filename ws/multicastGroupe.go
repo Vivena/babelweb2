@@ -30,34 +30,34 @@ func NewListener() *Listener {
 	return new(Listener).Init()
 }
 
-//Listenergroupe list of all the Listeners for the multicast
-type Listenergroupe struct {
+//Listenergroup list of all the Listeners for the multicast
+type Listenergroup struct {
 	sync.Mutex
 	listeners *list.List
 }
 
-//Init create a new Listenergroupe
-func (g *Listenergroupe) Init() *Listenergroupe {
+//Init create a new Listenergroup
+func (g *Listenergroup) Init() *Listenergroup {
 	g.listeners = list.New()
 	return g
 }
 
-//NewListenerGroupe function to call if you want a new Listenergroupe
-func NewListenerGroupe() *Listenergroupe {
-	return new(Listenergroupe).Init()
+//NewListenerGroup function to call if you want a new Listenergroup
+func NewListenerGroup() *Listenergroup {
+	return new(Listenergroup).Init()
 }
 
-//Push add a Listener to the Listenergroupe
-func (g *Listenergroupe) Push(newListener *Listener) {
+//Push add a Listener to the Listenergroup
+func (g *Listenergroup) Push(newListener *Listener) {
 	g.Lock()
 	defer g.Unlock()
 
 	g.listeners.PushBack(newListener)
 }
 
-//Flush remove a Listener from the Listenergroupe
-func (g *Listenergroupe) Flush(l *Listener) {
-	defer log.Println("Remouving listener from  the Listener groupe")
+//Flush remove a Listener from the Listenergroup
+func (g *Listenergroup) Flush(l *Listener) {
+	defer log.Println("Remouving listener from  the Listener group")
 	g.Lock()
 	defer g.Unlock()
 
@@ -71,7 +71,7 @@ func (g *Listenergroupe) Flush(l *Listener) {
 }
 
 //Iter Call the routine for each Listener
-func (g *Listenergroupe) Iter(routine func(*Listener)) {
+func (g *Listenergroup) Iter(routine func(*Listener)) {
 	g.Lock()
 	defer g.Unlock()
 	for i := g.listeners.Front(); i != nil; i = i.Next() {

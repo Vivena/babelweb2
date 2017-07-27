@@ -38,27 +38,27 @@ function babelWebV2() {
     function connect(socketWarper) {
 	try {
             socketWarper.socket = new WebSocket("ws://localhost:8080/ws");
+
+	    socketWarper.socket.onerror = function(error) {
+		console.error(error);
+	    };
+
+	    socketWarper.socket.onopen = function(event) {
+		d3.selectAll("body").select("#state")
+		    .text("Connected").style("background-color", "green");
+
+		this.onclose = function(event) {
+		    d3.selectAll("body").select("#state")
+			.text("Disconnected").style("background-color", "red");
+		};
+
+		this.onmessage = function(event) {
+		    convertJSON(event);
+		};
+	    };
 	} catch (exception) {
             console.error(exception);
 	}
-
-	socketWarper.socket.onerror = function(error) {
-            console.error(error);
-	};
-
-	socketWarper.socket.onopen = function(event) {
-            d3.selectAll("body").select("#state")
-		.text("Connected").style("background-color", "green");
-
-            this.onclose = function(event) {
-		d3.selectAll("body").select("#state")
-		    .text("Disconnected").style("background-color", "red");
-            };
-
-            this.onmessage = function(event) {
-		convertJSON(event);
-            };
-	};
     }
 
     function convertJSON(event) {
@@ -133,12 +133,12 @@ function babelWebV2() {
 
     }
 
-    var svg, color, width, height, simulation, vis, k = 1;
+    var svg, color, width, height, simulation, vis, koef = 1;
 
     function zoomOut(factor) {
-	k /= factor;
+	koef /= factor;
 
-	if(k == 1)
+	if(koef == 1)
 	    d3.select("#oto") .attr("disabled", true);
 	else
 	    d3.select("#oto") .attr("disabled", null);
@@ -151,7 +151,7 @@ function babelWebV2() {
     }
 
     function oneToOne() {
-	zoomOut(k);
+	zoomOut(koef);
     }
 
     function initLegend() {
@@ -313,7 +313,7 @@ function babelWebV2() {
 	simulation.force("link")
 	    .links(metrics)
 	    .strength(1)
-	    .distance(function(d) {return d.metric * k;});
+	    .distance(function(d) {return d.metric * koef;});
 
 	var node = vis.selectAll("circle.node")
 	    .data(nodes);
