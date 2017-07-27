@@ -253,24 +253,28 @@ func (t Table) String() string {
 	return s
 }
 
-type BabelDesc map[Id](Table)
+type BabelDesc struct {
+	id   Id
+	name Id
+	ts   map[Id](Table)
+}
 
-func (bd BabelDesc) String() string {
+func (bd *BabelDesc) String() string {
 	var s string
-	for id, t := range bd {
+	for id, t := range bd.ts {
 		s += (fmt.Sprintf("*\t%s\n", id) +
 			fmt.Sprintln(t))
 	}
 	return s
 }
 
-func NewBabelDesc() BabelDesc {
+func NewBabelDesc() *BabelDesc {
 	ts := make(map[Id](Table))
 	ts["route"] = Table{make(map[Id](Entry)), NewRouteEntry}
 	ts["xroute"] = Table{make(map[Id](Entry)), NewXrouteEntry}
 	ts["interface"] = Table{make(map[Id](Entry)), NewInterfaceEntry}
 	ts["neighbour"] = Table{make(map[Id](Entry)), NewNeighbourEntry}
-	return ts
+	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
 func (t Table) Add(id Id, e Entry) error {
@@ -318,10 +322,11 @@ type SBabelUpdate struct {
 	EntryData map[Id]interface{} `json:"data"`
 }
 
-func (bd BabelDesc) Iter(f func(BabelUpdate) error) error {
-	for tk, tv := range bd {
+func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
+	for tk, tv := range bd.ts {
 		for ek, ev := range tv.dict {
-			err := f(BabelUpdate{action: "add", tableId: tk,
+			err := f(BabelUpdate{name: bd.name, router: bd.id,
+				action: "add", tableId: tk,
 				entryId: ek, entry: ev})
 			if err != nil {
 				return err
@@ -332,7 +337,7 @@ func (bd BabelDesc) Iter(f func(BabelUpdate) error) error {
 }
 
 func (upd BabelUpdate) ToS() SBabelUpdate {
-	s_upd := SBabelUpdate{upd.name, upd. router, upd.action,
+	s_upd := SBabelUpdate{upd.name, upd.router, upd.action,
 		upd.tableId, upd.entryId, make(map[Id]interface{})}
 	for id, ev := range upd.entry {
 		switch t := ev.data.(type) {
@@ -352,7 +357,6 @@ var emptyUpdate = BabelUpdate{action: Id("none")}
 func (upd BabelUpdate) String() string {
 	return fmt.Sprintf("%s: %s %s\n%s", upd.action, upd.tableId,
 		upd.entryId, upd.entry)
-
 }
 
 func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
@@ -371,25 +375,26 @@ func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
 	if err != nil {
 		return emptyUpdate, err
 	}
-	new_entry := (*bd)[Id(table_id)].maker()
+	new_entry := (bd.ts)[Id(table_id)].maker()
 	err = new_entry.Parse(s)
 	if err != io.EOF && err != errEOL {
 		return emptyUpdate, err
 	}
-	return BabelUpdate{action: Id(w), tableId: Id(table_id),
+	return BabelUpdate{name: bd.name, router: bd.id,
+		action: Id(w), tableId: Id(table_id),
 		entryId: Id(entry_id), entry: new_entry}, err
 }
 
 func (bd *BabelDesc) Update(upd BabelUpdate) error {
 	switch upd.action {
 	case "add":
-		return (*bd)[Id(upd.tableId)].Add(
+		return (bd.ts)[Id(upd.tableId)].Add(
 			Id(upd.entryId), upd.entry)
 	case "change":
-		return (*bd)[Id(upd.tableId)].Change(
+		return (bd.ts)[Id(upd.tableId)].Change(
 			Id(upd.entryId), upd.entry)
 	case "flush":
-		return (*bd)[Id(upd.tableId)].Flush(Id(upd.entryId))
+		return (bd.ts)[Id(upd.tableId)].Flush(Id(upd.entryId))
 	}
 	return nil
 }
@@ -398,7 +403,7 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 	if upd.action != Id("change") {
 		return true
 	}
-	for key, value := range (*bd)[Id(upd.tableId)].dict[Id(upd.entryId)] {
+	for key, value := range (bd.ts)[Id(upd.tableId)].dict[Id(upd.entryId)] {
 		if !(reflect.DeepEqual((*upd.entry[key]).data, (*value).data)) {
 			return true
 		}
@@ -489,8 +494,7 @@ func NewScanner(r io.Reader) *Scanner {
 	return &Scanner{*s}
 }
 
-func (t *BabelDesc) GetParser(s *Scanner) (
-	(func(chan BabelUpdate) error), error) {
+func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	e := NewEntry()
 	e.AddField("BABEL", ParseString)
 	e.AddField("version", ParseString)
@@ -499,31 +503,13 @@ func (t *BabelDesc) GetParser(s *Scanner) (
 	for e["my-id"].data == nil || e["host"].data == nil {
 		err := e.Parse(s)	
 		if err != nil && err != io.EOF && err != errEOL {
-			return nil, err
+			return err
 		}
 	}
-	return func(updChan chan BabelUpdate) error {
-		for {
-			upd, err := t.ParseAction(s)
-			if err != nil && err != io.EOF && err != errEOL {
-				return err
-			}
-			if err == io.EOF {
-				break
-			}
-			if upd.action != emptyUpdate.action {
-				upd.router = Id(e["my-id"].data.(string))
-				upd.name = Id(e["host"].data.(string))
-				updChan <- upd
-			}
-		}
-		return nil
-	}, nil
-}
-
-func (t *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
+	bd.id = Id(e["my-id"].data.(string))
+	bd.name = Id(e["host"].data.(string))	
 	for {
-		upd, err := t.ParseAction(s)
+		upd, err := bd.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
@@ -537,8 +523,8 @@ func (t *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	return nil
 }
 
-func (t *BabelDesc) Clean(updChan chan BabelUpdate) error {
-	return t.Iter(func(u BabelUpdate) error {
+func (bd *BabelDesc) Clean(updChan chan BabelUpdate) error {
+	return bd.Iter(func(u BabelUpdate) error {
 		u.action = "flush"
 		updChan <- u
 		return nil

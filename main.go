@@ -94,12 +94,7 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 			fmt.Fprintf(conn, "monitor\n")
 			r := bufio.NewReader(conn)
 			s := parser.NewScanner(r)
-			listen, err := ws.Db.Bd.GetParser(s)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			listen(updates)
+			ws.Db.Bd.Listen(s, updates)
 			conn.Close()
 			log.Println("Connection closed")
 			if err != nil {

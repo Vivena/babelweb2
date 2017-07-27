@@ -34,7 +34,7 @@ type Message struct {
 
 type dataBase struct {
 	sync.Mutex
-	Bd parser.BabelDesc
+	Bd *parser.BabelDesc
 }
 
 type telnetWarper struct {

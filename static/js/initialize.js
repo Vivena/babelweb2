@@ -36,7 +36,6 @@ function babelWebV2() {
     };
 
     function connect(socketWarper) {
-
 	try {
             socketWarper.socket = new WebSocket("ws://localhost:8080/ws");
 	} catch (exception) {
@@ -62,75 +61,33 @@ function babelWebV2() {
 	};
     }
 
-    /*
-    var data = {router: "r1",
-		name: "woody",
-		table: "neighbour",
-		action: "add",
-		id: "55c47b990d90",
-		data: {
-		    "address": "fe80::e046:9aff:fe4e:912e",
-		    "if": "enp3s0",
-		    "reach": 6615,
-		    "rxcost": 96,
-		    "txcost": 96,
-		    "cost": 96,
-		},
-	       };
-    convertJSON(2);
-    data = {router: "r9",
-	    name: "buzz",
-		table: "neighbour",
-		action: "add",
-		id: "55c47b990d91",
-		data: {
-		    "address": "hohoho",
-		    "if": "enp2s0",
-		    "reach": 66615,
-		    "rxcost": 96,
-		    "txcost": 96,
-		    "cost": 96,
-		},
-	       };
-
-    convertJSON(2);*/
-
     function convertJSON(event) {
 	var data = JSON.parse(event.data);
 
 	if(current === "unknown")
-	    //current = data.router;
-	    current = "r1";
+	    current = data.router;
 
-	//if(!(data.router in babelDesc))
-	if(!("r1" in babelDesc))
-	    //babelDesc[data.router] = {
-	    babelDesc["r1"] = {
-		//"self": {"name": data.name, "id": data.router},
-		"self": {"name": "r1", "id": "woody"},
+	if(!(data.router in babelDesc))
+	    babelDesc[data.router] = {
+		"self": {"name": data.name, "id": data.router},
 		"interface": {},
 		"neighbour": {},
 		"route": {},
 		"xroute": {},
 	    };
-	//babelDesc[data.router].self.name = data.name;
-	//babelDesc[data.router][data.table][data.id] = {};
-	babelDesc["r1"].self.name = "woody";
-	babelDesc["r1"][data.table][data.id] = {};
+	babelDesc[data.router].self.name = data.name;
+	babelDesc[data.router][data.table][data.id] = {};
 	if(data.action === "flush")
-	    //delete babelDesc[data.router][data.table][data.id];
-	    delete babelDesc["r1"][data.table][data.id];
+	    delete babelDesc[data.router][data.table][data.id];
 	else {
 	    for(var key in data.data) {
-		//babelDesc[data.router][data.table][data.id][key] =
-		babelDesc["r1"][data.table][data.id][key] =
+		babelDesc[data.router][data.table][data.id][key] =
 		    data.data[key];
 	    }
 	}
 
 	updateSwitch();
-	//if(data.router === current)
-	if("r1" == current)
+	if(data.router === current)
 	    updateCurrent(current);
     }
 
