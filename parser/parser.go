@@ -342,9 +342,9 @@ func (upd BabelUpdate) ToS() SBabelUpdate {
 	for id, ev := range upd.entry {
 		switch t := ev.data.(type) {
 		case *net.IPNet:
-			s_upd.EntryData[id] = t.String();
+			s_upd.EntryData[id] = t.String()
 		case net.IP:
-			s_upd.EntryData[id] = t.String();
+			s_upd.EntryData[id] = t.String()
 		default:
 			s_upd.EntryData[id] = ev.data
 		}
@@ -501,13 +501,13 @@ func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 	e.AddField("host", ParseString)
 	e.AddField("my-id", ParseString)
 	for e["my-id"].data == nil || e["host"].data == nil {
-		err := e.Parse(s)	
+		err := e.Parse(s)
 		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
 	}
 	bd.id = Id(e["my-id"].data.(string))
-	bd.name = Id(e["host"].data.(string))	
+	bd.name = Id(e["host"].data.(string))
 	for {
 		upd, err := bd.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
