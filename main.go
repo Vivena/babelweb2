@@ -59,13 +59,13 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 	var conn net.Conn
 	var err error
 
-	exit := true
 	wg.Add(1)
 
 	defer wg.Done()
 	defer close(updates)
 
 	for {
+		exit := true
 		select {
 		case _, q := <-quit:
 			if !q {
@@ -150,7 +150,7 @@ func main() {
 
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	connection(updates, &wg, &bwPort)
-	bcastGrp := ws.NewListenerGroupe()
+	bcastGrp := ws.NewListenerGroup()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
 	ws := ws.Handler(bcastGrp)
 	http.Handle("/", http.FileServer(http.Dir("static/")))
