@@ -50,7 +50,7 @@ func connection(updates chan parser.BabelUpdate,
 	if lenArg == 0 {
 		go ConnectionNode(updates, node, wg, Quitmain)
 	} else {
-		go connectGroup(updates, node, wg)
+		connectGroup(updates, wg)
 	}
 }
 
@@ -60,9 +60,7 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 	var err error
 
 	wg.Add(1)
-
 	defer wg.Done()
-	defer close(updates)
 
 	for {
 		exit := true
@@ -117,28 +115,13 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 }
 
 /*-----    connection to multiple routers    ----*/
-func connectGroup(updates chan parser.BabelUpdate, node string,
-	wg *sync.WaitGroup) {
-
+func connectGroup(updates chan parser.BabelUpdate, wgGroup *sync.WaitGroup) {
 	var quitgroup = make(chan struct{}, 2)
-	var wgGroup sync.WaitGroup
+
 	for i := 0; i < len(myconnectlist); i++ {
 		go ConnectionNode(updates, myconnectlist[i],
-			&wgGroup, quitgroup)
+			wgGroup, quitgroup)
 	}
-
-}
-
-func find(index int) chan parser.BabelUpdate {
-	var i = 0
-	for e := Listconduct.Front(); e != nil; e = e.Next() {
-		if i == (index) {
-			return e.Value.(chan parser.BabelUpdate)
-		} else {
-			i++
-		}
-	}
-	return nil
 }
 
 func main() {
@@ -149,6 +132,8 @@ func main() {
 	var wg sync.WaitGroup
 
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
+	defer close(updates)
+
 	connection(updates, &wg, &bwPort)
 	bcastGrp := ws.NewListenerGroup()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
