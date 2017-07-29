@@ -508,14 +508,18 @@ func (bd *BabelDesc) Fill(s *Scanner) error {
 	e.AddField("version", ParseString)
 	e.AddField("host", ParseString)
 	e.AddField("my-id", ParseString)
-	for e["my-id"].data == nil || e["host"].data == nil {
+	for e["my-id"].data == nil {
 		err := e.Parse(s)
 		if err != nil && err != io.EOF && err != errEOL {
 			return err
 		}
 	}
 	bd.id = Id(e["my-id"].data.(string))
-	bd.name = Id(e["host"].data.(string))
+	if e["host"].data == nil {
+		bd.name = Id("unknown")
+	} else {
+		bd.name = Id(e["host"].data.(string))
+	}
 	return nil
 }
 
