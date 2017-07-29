@@ -37,8 +37,9 @@ function babelWebV2() {
 
     function connect(socketWarper) {
 	try {
-            socketWarper.socket = new WebSocket("ws://localhost:8080/ws");
-
+            socketWarper.socket = new WebSocket("ws://" +
+						Babelweb_server + "/ws");
+	    
 	    socketWarper.socket.onerror = function(error) {
 		console.error(error);
 	    };
