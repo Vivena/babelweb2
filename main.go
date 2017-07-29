@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 	"github.com/Vivena/babelweb2/parser"
@@ -138,10 +139,12 @@ func main() {
 	bcastGrp := ws.NewListenerGroup()
 	go ws.MCUpdates(updates, bcastGrp, &wg)
 	ws := ws.Handler(bcastGrp)
-	http.Handle("/", http.FileServer(http.Dir("static/")))
-	http.Handle("/style.css", http.FileServer(http.Dir("static/css/")))
-	http.Handle("/initialize.js", http.FileServer(http.Dir("static/js")))
-	http.Handle("/d3/d3.js", http.FileServer(http.Dir("static/js")))
+	static := os.Getenv("GOPATH") +
+		"/src/github.com/Vivena/babelweb2/static/"
+	http.Handle("/", http.FileServer(http.Dir(static)))
+	http.Handle("/style.css", http.FileServer(http.Dir(static + "css/")))
+	http.Handle("/initialize.js", http.FileServer(http.Dir(static + "js/")))
+	http.Handle("/d3/d3.js", http.FileServer(http.Dir(static + "js/")))
 	http.Handle("/ws", ws)
 
 	err := http.ListenAndServe(bwPort, nil)
