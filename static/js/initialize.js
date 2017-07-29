@@ -8,6 +8,11 @@ function babelWebV2() {
     var links = [];
     var metrics = [];
 
+    var addrToRouterId;
+
+    var initEnd = false;
+    var lostUpdate = false;
+
     var palette = {
 	"gray" : "#777"
 	, "lightGray" : "#ddd"
@@ -116,11 +121,11 @@ function babelWebV2() {
 	}
     }
 
-    var initEnd = false;
-
     function updateCurrent(newCurrent) {
-	if(!initEnd)
+	if(!initEnd) {
+	    lostUpdate = true;
 	    return;
+	}
 
 	if(current != newCurrent)
 	    routers = {};
@@ -190,9 +195,11 @@ function babelWebV2() {
 	    .on("tick", ticked);
 
 	initEnd = true;
+	if(lostUpdate) {
+	    updateCurrent(current);
+	    lostUpdate = false;
+	}
     }
-
-    var addrToRouterId;
 
     function recomputeNetwork() {
 	if(typeof routers[current] == 'undefined') {
@@ -329,12 +336,28 @@ function babelWebV2() {
 		  .on("end", dragended))
 	    .append("svg:title");
 	node.exit().remove();
-	vis.selectAll("circle")
+	vis.selectAll("circle.node")
 	    .style("fill", function(d) {
 		return (d.id == current) ?
 		    colors.current : (isNeighbour(d.id) ?
 				      colors.neighbour : colors.other);
+	    })
+	    .each(function(d) {
+		d3.select(this).select("title")
+		    .text(
+			nodeName(d.id)
+			    + " ["+d.id+"]"
+			    + " (metric: "+d.metric+")");
+
 	    });
+
+	function nodeName(id) {
+	    var name =
+		(babelDesc[id] && babelDesc[id].self.name) ||
+		"unknown";
+	    console.log(name);
+	    return name;
+	}
 
 	var route_path = d3.line()
 	    .x(function(d) {

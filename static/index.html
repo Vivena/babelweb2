@@ -126,11 +126,11 @@
         <script src="./js/initialize.js"></script>
         <script type="text/javascript">
 
-        var socketWarper = {socket: null}
+          var socketWarper = {socket: null}
           var babelweb  = babelWebV2();
           window.onload = function() {
-               babelweb.initLegend();
-	           babelweb.initGraph();
+	      babelweb.initLegend();
+	      babelweb.initGraph();
               babelweb.connect(socketWarper);
           }
 
