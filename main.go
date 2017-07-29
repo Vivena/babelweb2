@@ -1,8 +1,6 @@
 package main
 
 import (
-	"babelweb2/parser"
-	"babelweb2/ws"
 	"bufio"
 	"container/list"
 	"flag"
@@ -12,6 +10,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"github.com/Vivena/babelweb2/parser"
+	"github.com/Vivena/babelweb2/ws"
 )
 
 type connectslice []string

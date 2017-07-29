@@ -1,12 +1,11 @@
 package ws
 
 import (
-	"babelweb2/parser"
 	"log"
 	"net/http"
 	"sync"
-
 	"github.com/gorilla/websocket"
+	"github.com/Vivena/babelweb2/parser"
 )
 
 const (
