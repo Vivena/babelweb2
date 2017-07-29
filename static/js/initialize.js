@@ -46,16 +46,16 @@ function babelWebV2() {
 	    socketWarper.socket.onopen = function(event) {
 		d3.selectAll("body").select("#state")
 		    .text("Connected").style("background-color", "green");
+	    }
 
-		this.onclose = function(event) {
-		    d3.selectAll("body").select("#state")
-			.text("Disconnected").style("background-color", "red");
-		};
+	    socketWarper.socket.onclose = function(event) {
+		d3.selectAll("body").select("#state")
+		    .text("Disconnected").style("background-color", "red");
+	    }
 
-		this.onmessage = function(event) {
-		    convertJSON(event);
-		};
-	    };
+	    socketWarper.socket.onmessage = function(event) {
+		convertJSON(event);
+	    }
 	} catch (exception) {
             console.error(exception);
 	}

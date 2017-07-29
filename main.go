@@ -95,7 +95,7 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 			bd := parser.NewBabelDesc()
 			bd.Fill(s)
 			ws.AddDesc(bd)
-			ws.Db[bd.Id()].Bd.Listen(s, updates)
+			err := ws.Db[bd.Id()].Bd.Listen(s, updates)
 
 			conn.Close()
 			log.Println("Connection closed")
