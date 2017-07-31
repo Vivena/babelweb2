@@ -1,5 +1,5 @@
 # BabelWeb2
-Yet Another Monitoring Tool for the Babel Routing Daemon
+Yet Another Monitoring Tool for the Babel Routing Daemon.
 
 ## Installation
 
@@ -24,14 +24,10 @@ By default, babelweb2 interface is located at: http://localhost:8080/
 It's possible to change this behavior by editing `static/js/config.js` file.
 
 From the routing daemon BabelWeb2 must obtain at least:
-
-    - announced metric
-
-    - computed metric
-
-    - next hop
-
-    - router-id
+- Announced metric
+- Computed metric
+- Next hop
+- Router-id
 
 BabelWeb2 is created by Belynda Hamaz, Edward Guyot and Fedor Ryabinin.  
-It is highly inspired by Gabriel Kerneis's BabelWeb.
+It is highly inspired by Gabriel Kerneis's [BabelWeb](https://github.com/kerneis/babelweb).
