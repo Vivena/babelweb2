@@ -1,41 +1,40 @@
 .links line {
-  stroke: #999;
-  stroke-opacity: 0.6;
+    stroke: #999;
+    stroke-opacity: 0.6;
 }
 
 .nodes circle {
-  stroke: #fff;
-  stroke-width: 1.5px;
+    stroke: #fff;
+    stroke-width: 1.5px;
 }
+
 body {
-margin: 10px;
+    font-family: verdana, "DejaVu Sans", "BitStream Vera Sans", arial,
+    helvetica, sans-serif;
+    color: #000;
+    margin: 10px;
+}
+
+#credits {
+    font-size: small;
 }
 
 .good { background-color: #CAFF70; }
 .bad { background-color: #FF7256; }
 .loading {font-style: italic ; }
 
-h2 { clear: both; }
-h1
-{
-  font-size: 40px;
-  font-family:"Segoe print", Arial, Helvetica, sans-serif;
-  color: #dd0000;
-  margin:16px auto;
-  font-weight:lighter;
-  box-shadow:none;
-  text-align:center;
-  display:block;
-  border-width: 1px 0px;
-  border-style: solid;
-  border-color: #008080;
-
+h1, h2, h3, h4, h5, h6 {
+    font-family: arial, helvetica, sans-serif;
+    font-weight: bold;
+    font-style: normal;
 }
 
+h2:not([name="routers_h"]) { clear: both; }
+
 #fig {
-        width: 630px;
-        min-height: 425px;
-        float: left;
+    width: 630px;
+    min-height: 425px;
+    float: left;
 }
 
 td, th { font-family: monospace; padding: 0 1ex 0 1ex;}
@@ -61,10 +60,10 @@ p.legend span { float: left; display: block; }
 
 tr:hover { opacity: 0.7; }
 tr {
-  background-color: white;
-  -webkit-transition: background-color 1s;
-  -moz-transition: background-color 1s;
-  -o-transition: background-color 1s;
-  -ms-transition: background-color 1s;
-  transition: background-color 1s;
+    background-color: white;
+    -webkit-transition: background-color 1s;
+    -moz-transition: background-color 1s;
+    -o-transition: background-color 1s;
+    -ms-transition: background-color 1s;
+    transition: background-color 1s;
 }
