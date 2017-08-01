@@ -37,10 +37,9 @@ func flagsInit(bwPort *string) int {
 		"list of hostnames and portnums (shorthand)")
 	flag.Var(&myconnectlist, "hostport", "liste of hostnames and portnums")
 
-	flag.StringVar(bwPort, "b", ":8080", "babelweb Port (shorthand)")
-	flag.StringVar(bwPort, "bwport", ":8080", "babelweb Port")
+	flag.StringVar(bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&static_root, "static", "./static/",
-		"directory with static files")
+		"location of directory with static files")
 	flag.Parse()
 
 	return len(myconnectlist)
