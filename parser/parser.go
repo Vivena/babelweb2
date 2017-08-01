@@ -18,19 +18,17 @@ type Scanner struct {
 }
 
 func nextWord(s *Scanner) (string, error) {
-	more := s.Scan()
-	if more {
-		if s.Text() == "\n" {
+	if s.Scan() {
+		word := s.Text()
+		if word == "\n" {
 			return "", errEOL
-		} else {
-			return s.Text(), nil
 		}
+		return word, nil
 	}
-	err := s.Err()
-	if err == nil {
-		return "", io.EOF
+	if err := s.Err(); err != nil {
+		return "", err
 	}
-	return "", err
+	return "", io.EOF
 }
 
 type Id string
