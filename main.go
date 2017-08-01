@@ -25,30 +25,17 @@ var ws_url string
 func (i *nodeslice) String() string {
 	return fmt.Sprintf("%s", *i)
 }
+
 func (i *nodeslice) Set(value string) error {
 	*i = append(*i, value)
 	return nil
-}
-
-func flagsInit(bwPort *string) int {
-	flag.Var(&nodes, "node",
-		"Babel node to connect to (may be repeated multiple times)")
-	flag.StringVar(bwPort, "http", ":8080", "web server address")
-	flag.StringVar(&static_root, "static", "./static/",
-		"directory with static files")
-	flag.StringVar(&ws_url, "ws", "ws://localhost:8080",
-		"location of the websocket")
-	flag.Parse()
-
-	return len(nodes)
 }
 
 func connection(updates chan parser.BabelUpdate,
 	wg *sync.WaitGroup, bwPort *string) {
 	var node string
 	node = "[::1]:33123"
-	var lenArg = flagsInit(bwPort)
-	if lenArg == 0 {
+	if len(nodes) == 0 {
 		wg.Add(1)
 		go func () {
 			ConnectionNode(updates, node, Quitmain)
@@ -134,11 +121,21 @@ func serveConfig(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	var bwPort string
+	var wg sync.WaitGroup
+
+	flag.Var(&nodes, "node",
+		"Babel node to connect to (may be repeated multiple times)")
+	flag.StringVar(&bwPort, "http", ":8080", "web server address")
+	flag.StringVar(&static_root, "static", "./static/",
+		"directory with static files")
+	flag.StringVar(&ws_url, "ws", "ws://localhost:8080",
+		"location of the websocket")
+	flag.Parse()
+
 	ws.Init()
 	defer close(Quitmain)
 	log.Println("	--------launching server--------")
-	var bwPort string
-	var wg sync.WaitGroup
 
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	defer close(updates)
