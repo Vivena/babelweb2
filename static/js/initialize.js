@@ -13,6 +13,8 @@ function babelWebV2() {
     var initEnd = false;
     var lostUpdate = false;
 
+    var svg, color, width, height, simulation, vis, koef = 1;
+
     var palette = {
 	"gray" : "#777"
 	, "lightGray" : "#ddd"
@@ -62,6 +64,7 @@ function babelWebV2() {
 	    socketWarper.socket.onmessage = function(event) {
 		convertJSON(event);
 	    }
+	    redraw();
 	} catch (exception) {
             console.error(exception);
 	}
@@ -97,6 +100,16 @@ function babelWebV2() {
 	    updateCurrent(current);
     }
 
+    function isEmpty() {
+	for(t in babelDesc[current]) {
+	    if(t == "self")
+		continue;
+	    for(i in babelDesc[current][t])
+		return metrics.length <= 1;
+	}
+	return true;
+    }
+
     function updateSwitch() {
 	var options = d3.select("#nodes").selectAll("option")
 	    .data(d3.keys(babelDesc), function(d) { return d;});
@@ -127,8 +140,10 @@ function babelWebV2() {
 	    return;
 	}
 
-	if(current != newCurrent)
+	if(current != newCurrent) {
+	    oneToOne();
 	    routers = {};
+	}
 
 	current = newCurrent;
 	updateTable("neighbour");
@@ -139,15 +154,13 @@ function babelWebV2() {
 
     }
 
-    var svg, color, width, height, simulation, vis, koef = 1;
-
     function zoomOut(factor) {
 	koef /= factor;
 
 	if(koef == 1)
-	    d3.select("#oto") .attr("disabled", true);
+	    d3.select("#oto").attr("disabled", true);
 	else
-	    d3.select("#oto") .attr("disabled", null);
+	    d3.select("#oto").attr("disabled", null);
 	
 	redraw();
     }
@@ -318,6 +331,17 @@ function babelWebV2() {
 	    return false;
 	}
 
+	if(isEmpty()) {
+	    d3.select("#oto").attr("disabled", true);
+	    d3.select("#zin").attr("disabled", true);
+	    d3.select("#zout").attr("disabled", true);
+	}
+	else {
+	    // It's not an error that there is no #oto (I hope so)
+	    d3.select("#zin").attr("disabled", null);
+	    d3.select("#zout").attr("disabled", null);
+	}
+
 	simulation.force("link")
 	    .links(metrics)
 	    .strength(1)
@@ -355,7 +379,6 @@ function babelWebV2() {
 	    var name =
 		(babelDesc[id] && babelDesc[id].self.name) ||
 		"unknown";
-	    console.log(name);
 	    return name;
 	}
 
