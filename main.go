@@ -8,7 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"os"
+	"strings"
 	"sync"
 	"time"
 	"github.com/Vivena/babelweb2/parser"
@@ -20,6 +20,7 @@ type connectslice []string
 var myconnectlist connectslice
 var Listconduct = list.New()
 var Quitmain = make(chan struct{}, 2)
+var static_root string
 
 func (i *connectslice) String() string {
 	return fmt.Sprintf("%s", *i)
@@ -38,6 +39,8 @@ func flagsInit(bwPort *string) int {
 
 	flag.StringVar(bwPort, "b", ":8080", "babelweb Port (shorthand)")
 	flag.StringVar(bwPort, "bwport", ":8080", "babelweb Port")
+	flag.StringVar(&static_root, "static", "./static/",
+		"directory with static files")
 	flag.Parse()
 
 	return len(myconnectlist)
@@ -146,8 +149,12 @@ func main() {
 		wg.Done()
 	}()
 	ws := ws.Handler(bcastGrp)
-	static := os.Getenv("GOPATH") +
-		"/src/github.com/Vivena/babelweb2/static/"
+
+	static := static_root
+	if !strings.HasSuffix(static, "/") {
+		static = static + "/"
+	}
+
 	http.Handle("/", http.FileServer(http.Dir(static)))
 	http.Handle("/style.css", http.FileServer(http.Dir(static + "css/")))
 	http.Handle("/initialize.js", http.FileServer(http.Dir(static + "js/")))
