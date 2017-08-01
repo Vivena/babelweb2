@@ -2,9 +2,9 @@ package ws
 
 import (
 	"container/list"
+	"github.com/Vivena/babelweb2/parser"
 	"log"
 	"sync"
-	"github.com/Vivena/babelweb2/parser"
 )
 
 const ChanelSize int = 1024

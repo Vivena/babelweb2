@@ -5,13 +5,13 @@ import (
 	"container/list"
 	"flag"
 	"fmt"
+	"github.com/Vivena/babelweb2/parser"
+	"github.com/Vivena/babelweb2/ws"
 	"log"
 	"net"
 	"net/http"
 	"sync"
 	"time"
-	"github.com/Vivena/babelweb2/parser"
-	"github.com/Vivena/babelweb2/ws"
 )
 
 type nodeslice []string
@@ -37,7 +37,7 @@ func connection(updates chan parser.BabelUpdate,
 	node = "[::1]:33123"
 	if len(nodes) == 0 {
 		wg.Add(1)
-		go func () {
+		go func() {
 			ConnectionNode(updates, node, Quitmain)
 			wg.Done()
 		}()
@@ -143,7 +143,7 @@ func main() {
 	connection(updates, &wg, &bwPort)
 	bcastGrp := ws.NewListenerGroup()
 	wg.Add(1)
-	go func () {
+	go func() {
 		ws.MCUpdates(updates, bcastGrp)
 		wg.Done()
 	}()
