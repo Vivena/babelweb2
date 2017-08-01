@@ -149,15 +149,7 @@ func main() {
 	}()
 	ws := ws.Handler(bcastGrp)
 
-	static := static_root
-	if !strings.HasSuffix(static, "/") {
-		static = static + "/"
-	}
-
-	http.Handle("/", http.FileServer(http.Dir(static)))
-	http.Handle("/style.css", http.FileServer(http.Dir(static + "css/")))
-	http.Handle("/initialize.js", http.FileServer(http.Dir(static + "js/")))
-	http.Handle("/d3/d3.js", http.FileServer(http.Dir(static + "js/")))
+	http.Handle("/", http.FileServer(http.Dir(static_root)))
 	http.Handle("/ws", ws)
 
 	err := http.ListenAndServe(bwPort, nil)
