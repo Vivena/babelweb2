@@ -140,7 +140,11 @@ func main() {
 
 	connection(updates, &wg, &bwPort)
 	bcastGrp := ws.NewListenerGroup()
-	go ws.MCUpdates(updates, bcastGrp, &wg)
+	wg.Add(1)
+	go func () {
+		ws.MCUpdates(updates, bcastGrp)
+		wg.Done()
+	}()
 	ws := ws.Handler(bcastGrp)
 	static := os.Getenv("GOPATH") +
 		"/src/github.com/Vivena/babelweb2/static/"

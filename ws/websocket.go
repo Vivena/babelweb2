@@ -34,9 +34,7 @@ type dataBase struct {
 }
 
 //MCUpdates multicast updates sent by the routine comminicating with the routers
-func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroup,
-	wg *sync.WaitGroup) {
-	wg.Add(1)
+func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroup) {
 	for {
 		update, quit := <-updates
 		if !quit {
@@ -44,7 +42,6 @@ func MCUpdates(updates chan parser.BabelUpdate, g *Listenergroup,
 			g.Iter(func(l *Listener) {
 				close(l.conduct)
 			})
-			wg.Done()
 			return
 		}
 		if !(Db[update.Id()].Bd.CheckUpdate(update)) {
