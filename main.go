@@ -49,19 +49,20 @@ func connection(updates chan parser.BabelUpdate,
 	node = "[::1]:33123"
 	var lenArg = flagsInit(bwPort)
 	if lenArg == 0 {
-		go ConnectionNode(updates, node, wg, Quitmain)
+		wg.Add(1)
+		go func () {
+			ConnectionNode(updates, node, Quitmain)
+			wg.Done()
+		}()
 	} else {
 		connectGroup(updates, wg)
 	}
 }
 
-func ConnectionNode(updates chan parser.BabelUpdate, node string,
-	wg *sync.WaitGroup, quit chan struct{}) {
+func ConnectionNode(updates chan parser.BabelUpdate,
+	node string, quit chan struct{}) {
 	var conn net.Conn
 	var err error
-
-	wg.Add(1)
-	defer wg.Done()
 
 	for {
 		exit := true
@@ -115,13 +116,15 @@ func ConnectionNode(updates chan parser.BabelUpdate, node string,
 	}
 }
 
-/*-----    connection to multiple routers    ----*/
-func connectGroup(updates chan parser.BabelUpdate, wgGroup *sync.WaitGroup) {
+func connectGroup(updates chan parser.BabelUpdate, wg *sync.WaitGroup) {
 	var quitgroup = make(chan struct{}, 2)
 
 	for i := 0; i < len(myconnectlist); i++ {
-		go ConnectionNode(updates, myconnectlist[i],
-			wgGroup, quitgroup)
+		wg.Add(1)
+		go func() {
+			ConnectionNode(updates, myconnectlist[i], quitgroup)
+			wg.Done()
+		}()
 	}
 }
 
