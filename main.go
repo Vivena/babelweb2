@@ -14,29 +14,25 @@ import (
 	"github.com/Vivena/babelweb2/ws"
 )
 
-type connectslice []string
+type nodeslice []string
 
-var myconnectlist connectslice
+var nodes nodeslice
 var Listconduct = list.New()
 var Quitmain = make(chan struct{}, 2)
 var static_root string
 var ws_url string
 
-func (i *connectslice) String() string {
+func (i *nodeslice) String() string {
 	return fmt.Sprintf("%s", *i)
 }
-func (i *connectslice) Set(value string) error {
-	fmt.Printf("%s\n", value)
+func (i *nodeslice) Set(value string) error {
 	*i = append(*i, value)
 	return nil
 }
 
 func flagsInit(bwPort *string) int {
-
-	flag.Var(&myconnectlist, "hp",
-		"list of hostnames and portnums (shorthand)")
-	flag.Var(&myconnectlist, "hostport", "liste of hostnames and portnums")
-
+	flag.Var(&nodes, "node",
+		"Babel node to connect to (may be repeated multiple times)")
 	flag.StringVar(bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&static_root, "static", "./static/",
 		"directory with static files")
@@ -44,7 +40,7 @@ func flagsInit(bwPort *string) int {
 		"location of the websocket")
 	flag.Parse()
 
-	return len(myconnectlist)
+	return len(nodes)
 }
 
 func connection(updates chan parser.BabelUpdate,
@@ -123,10 +119,10 @@ func ConnectionNode(updates chan parser.BabelUpdate,
 func connectGroup(updates chan parser.BabelUpdate, wg *sync.WaitGroup) {
 	var quitgroup = make(chan struct{}, 2)
 
-	for i := 0; i < len(myconnectlist); i++ {
+	for i := 0; i < len(nodes); i++ {
 		wg.Add(1)
 		go func() {
-			ConnectionNode(updates, myconnectlist[i], quitgroup)
+			ConnectionNode(updates, nodes[i], quitgroup)
 			wg.Done()
 		}()
 	}
