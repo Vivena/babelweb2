@@ -12,16 +12,22 @@ Launch Babel on your local host:
 
     babeld -G 33123 ...
 
-Start BabelWeb2:
+By default, Babwelweb attempts to connect to a Babel node at [::1]:33123:
 
     babelweb2
 
-Or you can precise routers to monitor:
+but you may specify a list of Babel nodes to monitor:
 
-    babelweb2 -hp=[::1]:33123 -hp=[2001:660:3301:9208::88]:33123
+    babelweb2 -node=[::1]:33123 -node=[2001:660:3301:9208::88]:33123
 
-By default, babelweb2 interface is located at: http://localhost:8080/  
-It's possible to change this behavior by editing `static/js/config.js` file.
+The web interface is on port 8080 (type "http://localhost:8080" in your
+browser).  You may specify a different port using the "-http" flag.
+
+By default, the browser attempts to connect to a server on localhost.  In
+order to make Babelweb available over the Internet, you must specify your
+hosts global address using the "-ws" flag:
+
+  babelweb2 -ws "ws://babelweb.example.com:8080"
 
 From the routing daemon BabelWeb2 must obtain at least:
 - Announced metric
