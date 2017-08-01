@@ -20,7 +20,7 @@ var myconnectlist connectslice
 var Listconduct = list.New()
 var Quitmain = make(chan struct{}, 2)
 var static_root string
-var ws_location string
+var ws_url string
 
 func (i *connectslice) String() string {
 	return fmt.Sprintf("%s", *i)
@@ -40,8 +40,8 @@ func flagsInit(bwPort *string) int {
 	flag.StringVar(bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&static_root, "static", "./static/",
 		"directory with static files")
-	flag.StringVar(&ws_location, "ws", "localhost:8080",
-		"location of the websocket to connect to")
+	flag.StringVar(&ws_url, "ws", "ws://localhost:8080",
+		"location of the websocket")
 	flag.Parse()
 
 	return len(myconnectlist)
@@ -134,7 +134,7 @@ func connectGroup(updates chan parser.BabelUpdate, wg *sync.WaitGroup) {
 
 func serveConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/javascript")
-	fmt.Fprintf(w, "Babelweb_server = '%v'", ws_location)
+	fmt.Fprintf(w, "websocket_url = '%v'", ws_url)
 }
 
 func main() {
