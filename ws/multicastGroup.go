@@ -13,12 +13,12 @@ var globalClose = make(chan struct{})
 
 //Listener unique channel for each ws
 type Listener struct {
-	conduct chan parser.SBabelUpdate
+	Conduct chan parser.SBabelUpdate
 }
 
 //Init create a Listener
 func (l *Listener) Init() *Listener {
-	l.conduct = make(chan parser.SBabelUpdate)
+	l.Conduct = make(chan parser.SBabelUpdate)
 	return l
 }
 
