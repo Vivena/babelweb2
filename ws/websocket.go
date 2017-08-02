@@ -8,29 +8,36 @@ import (
 	"sync"
 )
 
-const (
-	delete = iota
-	update = iota
-)
+type node struct {
+	m *sync.Mutex
+	desc *parser.BabelDesc
+}
+
+var nodes map[parser.Id]node
+
+func Init() {
+	nodes = make(map[parser.Id]node)
+}
+
+func AddDesc(d *parser.BabelDesc) {
+	nodes[d.Id()] = node{desc: d, m: new(sync.Mutex)}
+}
+
+func GetDesc(id parser.Id) *parser.BabelDesc {
+	return nodes[id].desc
+}
+
+func LockDesc(id parser.Id) {
+	nodes[id].m.Lock()
+}
+
+func UnlockDesc(id parser.Id) {
+	nodes[id].m.Unlock()
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-}
-
-var Db map[parser.Id]dataBase
-
-func Init() {
-	Db = make(map[parser.Id]dataBase)
-}
-
-func AddDesc(bd *parser.BabelDesc) {
-	Db[bd.Id()] = dataBase{Bd: bd, M: new(sync.Mutex)}
-}
-
-type dataBase struct {
-	M  *sync.Mutex
-	Bd *parser.BabelDesc
 }
 
 //Handler manage the websockets
@@ -43,9 +50,9 @@ func Handler(l *Listenergroup) http.Handler {
 			return
 		}
 		log.Println("    Sending the database to the new client")
-		for router := range Db {
-			Db[router].M.Lock()
-			Db[router].Bd.Iter(func(bu parser.BabelUpdate) error {
+		for router := range nodes {
+			nodes[router].m.Lock()
+			nodes[router].desc.Iter(func(bu parser.BabelUpdate) error {
 				sbu := bu.ToSUpdate()
 				err := conn.WriteJSON(sbu)
 				if err != nil {
@@ -53,7 +60,7 @@ func Handler(l *Listenergroup) http.Handler {
 				}
 				return err
 			})
-			Db[router].M.Unlock()
+			nodes[router].m.Unlock()
 		}
 		updates := NewListener()
 		l.Push(updates)

@@ -59,19 +59,19 @@ func connectionNode(updates chan parser.BabelUpdate, node string) {
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
-		bd := parser.NewBabelDesc()
-		bd.Fill(s)
-		ws.AddDesc(bd)
-		err := ws.Db[bd.Id()].Bd.Listen(s, updates)
+		desc := parser.NewBabelDesc()
+		desc.Fill(s)
+		ws.AddDesc(desc)
+		err := desc.Listen(s, updates)
 		conn.Close()
 		log.Println("Connection closed")
 		if err != nil {
 			log.Println(err)
 			return
 		}
-		ws.Db[bd.Id()].M.Lock()
-		err = ws.Db[bd.Id()].Bd.Clean(updates)
-		ws.Db[bd.Id()].M.Unlock()
+		ws.LockDesc(desc.Id())
+		err = desc.Clean(updates)
+		ws.UnlockDesc(desc.Id())
 		if err != nil {
 			log.Println(err)
 			return
@@ -116,15 +116,16 @@ func main() {
 
 	for {
 		update := <-updates
-		if !(ws.Db[update.Id()].Bd.CheckUpdate(update)) {
+		desc := ws.GetDesc(update.Id())
+		if !(desc.CheckUpdate(update)) {
 			continue
 		}
-		ws.Db[update.Id()].M.Lock()
-		err := ws.Db[update.Id()].Bd.Update(update)
+		ws.LockDesc(update.Id())
+		err := desc.Update(update)
 		if err != nil {
 			log.Println(err)
 		}
-		ws.Db[update.Id()].M.Unlock()
+		ws.LockDesc(update.Id())
 		t := update.ToSUpdate()
 		bcastGrp.Iter(func(l *ws.Listener) {
 			l.Conduct <- t
