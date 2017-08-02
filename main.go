@@ -102,7 +102,7 @@ func main() {
 	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
 	defer close(updates)
 	connection(updates, &bwPort)
-	
+
 	bcastGrp := ws.NewListenerGroup()
 	handler := ws.Handler(bcastGrp)
 	http.Handle("/", http.FileServer(http.Dir(static_root)))

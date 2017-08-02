@@ -9,7 +9,7 @@ import (
 )
 
 type node struct {
-	m *sync.Mutex
+	m    *sync.Mutex
 	desc *parser.BabelDesc
 }
 
@@ -52,14 +52,15 @@ func Handler(l *Listenergroup) http.Handler {
 		log.Println("    Sending the database to the new client")
 		for router := range nodes {
 			nodes[router].m.Lock()
-			nodes[router].desc.Iter(func(bu parser.BabelUpdate) error {
-				sbu := bu.ToSUpdate()
-				err := conn.WriteJSON(sbu)
-				if err != nil {
-					log.Println(err)
-				}
-				return err
-			})
+			nodes[router].desc.Iter(
+				func(bu parser.BabelUpdate) error {
+					sbu := bu.ToSUpdate()
+					err := conn.WriteJSON(sbu)
+					if err != nil {
+						log.Println(err)
+					}
+					return err
+				})
 			nodes[router].m.Unlock()
 		}
 		updates := NewListener()
