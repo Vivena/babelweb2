@@ -76,7 +76,8 @@ func main() {
 	var bwPort string
 
 	flag.Var(&nodes, "node",
-		"Babel node to connect to (default \"[::1]:33123\", may be repeated)")
+		"Babel node to connect to (default \"[::1]:33123\", " +
+			"may be repeated)")
 	flag.StringVar(&bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&staticRoot, "static", "./static/",
 		"directory with static files")
