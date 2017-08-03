@@ -97,7 +97,7 @@ func main() {
 	ws.Init()
 	log.Println("	--------launching server--------")
 
-	updates := make(chan parser.BabelUpdate, ws.ChanelSize)
+	updates := make(chan parser.BabelUpdate, 1024)
 	defer close(updates)
 	connection(updates, &bwPort)
 

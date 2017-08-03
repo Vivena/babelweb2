@@ -7,8 +7,6 @@ import (
 	"sync"
 )
 
-const ChanelSize int = 1024
-
 var globalClose = make(chan struct{})
 
 //Listener unique channel for each ws
