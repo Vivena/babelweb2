@@ -27,17 +27,7 @@ func (i *nodeslice) Set(value string) error {
 	return nil
 }
 
-func connection(updates chan parser.BabelUpdate, bwPort *string) {
-	if len(nodes) == 0 {
-		go connectionNode(updates, "[::1]:33123")
-	} else {
-		for i := 0; i < len(nodes); i++ {
-			go connectionNode(updates, nodes[i])
-		}
-	}
-}
-
-func connectionNode(updates chan parser.BabelUpdate, node string) {
+func connection(updates chan parser.BabelUpdate, node string) {
 	var conn net.Conn
 	var err error
 
@@ -86,20 +76,26 @@ func main() {
 	var bwPort string
 
 	flag.Var(&nodes, "node",
-		"Babel node to connect to (may be repeated multiple times)")
+		"Babel node to connect to (default \"[::1]:33123\", may be repeated)")
 	flag.StringVar(&bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&staticRoot, "static", "./static/",
 		"directory with static files")
 	flag.StringVar(&wsURL, "ws", "ws://localhost:8080",
 		"location of the websocket")
 	flag.Parse()
+	if len(nodes) == 0 {
+		nodes = nodeslice{"[::1]:33123"}
+	}
 
 	ws.Init()
 	log.Println("	--------launching server--------")
 
 	updates := make(chan parser.BabelUpdate, 1024)
 	defer close(updates)
-	connection(updates, &bwPort)
+
+	for i := 0; i < len(nodes); i++ {
+		go connection(updates, nodes[i])
+	}
 
 	bcastGrp := ws.NewListenerGroup()
 	handler := ws.Handler(bcastGrp)
