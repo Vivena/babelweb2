@@ -9,39 +9,43 @@ import (
 )
 
 type node struct {
-	m    *sync.Mutex
+	sync.Mutex
 	desc *parser.BabelDesc
 }
 
-var nodes map[parser.Id]*node
-var nodesMutex sync.Mutex
+type nodelist struct {
+	sync.Mutex
+	nodes map[parser.Id]*node
+}
+
+var nodes nodelist
 
 func Init() {
-	nodes = make(map[parser.Id]*node)
+	nodes.nodes = make(map[parser.Id]*node)
 }
 
 func AddDesc(d *parser.BabelDesc) {
-	nodesMutex.Lock()
-	nodes[d.Id()] = &node{desc: d, m: new(sync.Mutex)}
-	nodesMutex.Unlock()
+	nodes.Lock()
+	nodes.nodes[d.Id()] = &node{desc: d}
+	nodes.Unlock()
 }
 
 func RemoveDesc(id parser.Id) {
-	nodesMutex.Lock()
-	delete(nodes, id)
-	nodesMutex.Unlock()
+	nodes.Lock()
+	delete(nodes.nodes, id)
+	nodes.Unlock()
 }
 
 func GetDesc(id parser.Id) *parser.BabelDesc {
-	return nodes[id].desc
+	return nodes.nodes[id].desc
 }
 
 func LockDesc(id parser.Id) {
-	nodes[id].m.Lock()
+	nodes.nodes[id].Lock()
 }
 
 func UnlockDesc(id parser.Id) {
-	nodes[id].m.Unlock()
+	nodes.nodes[id].Unlock()
 }
 
 var upgrader = websocket.Upgrader{
@@ -59,9 +63,9 @@ func Handler(l *Listenergroup) http.Handler {
 			return
 		}
 
-		for router := range nodes {
-			nodes[router].m.Lock()
-			nodes[router].desc.Iter(
+		for _, node := range nodes.nodes {
+			node.Lock()
+			node.desc.Iter(
 				func(bu parser.BabelUpdate) error {
 					sbu := bu.ToSUpdate()
 					err := conn.WriteJSON(sbu)
@@ -70,7 +74,7 @@ func Handler(l *Listenergroup) http.Handler {
 					}
 					return err
 				})
-			nodes[router].m.Unlock()
+			node.Unlock()
 		}
 		updates := NewListener()
 		l.Push(updates)
