@@ -123,7 +123,7 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		ws.LockDesc(update.Id())
+		ws.UnlockDesc(update.Id())
 		t := update.ToSUpdate()
 		bcastGrp.Iter(func(l *ws.Listener) {
 			l.Conduct <- t
