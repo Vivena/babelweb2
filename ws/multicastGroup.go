@@ -3,7 +3,6 @@ package ws
 import (
 	"container/list"
 	"github.com/Vivena/babelweb2/parser"
-	"log"
 	"sync"
 )
 
@@ -42,7 +41,6 @@ func (g *Listenergroup) Push(newListener *Listener) {
 
 //Flush remove a Listener from the Listenergroup
 func (g *Listenergroup) Flush(l *Listener) {
-	defer log.Println("Remouving listener from  the Listener group")
 	g.Lock()
 	defer g.Unlock()
 

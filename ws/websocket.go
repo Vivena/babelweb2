@@ -14,13 +14,22 @@ type node struct {
 }
 
 var nodes map[parser.Id]node
+var nodesMutex sync.Mutex
 
 func Init() {
 	nodes = make(map[parser.Id]node)
 }
 
 func AddDesc(d *parser.BabelDesc) {
+	nodesMutex.Lock()
 	nodes[d.Id()] = node{desc: d, m: new(sync.Mutex)}
+	nodesMutex.Unlock()
+}
+
+func RemoveDesc(id parser.Id) {
+	nodesMutex.Lock()
+	delete(nodes, id)
+	nodesMutex.Unlock()
 }
 
 func GetDesc(id parser.Id) *parser.BabelDesc {
@@ -50,18 +59,6 @@ func Handler(l *Listenergroup) http.Handler {
 			return
 		}
 
-		// Ignore any data received on the websocket and detect
-		// any errors.
-		go func() {
-			for {
-				_, _, err := conn.NextReader();
-				if err != nil {
-					conn.Close()
-					break
-				}
-			}
-		}()
-
 		for router := range nodes {
 			nodes[router].m.Lock()
 			nodes[router].desc.Iter(
@@ -77,7 +74,20 @@ func Handler(l *Listenergroup) http.Handler {
 		}
 		updates := NewListener()
 		l.Push(updates)
-		defer l.Flush(updates)
+
+		// Ignore any data received on the websocket and detect
+		// any errors.
+		go func() {
+			for {
+				_, _, err := conn.NextReader()
+				if err != nil {
+					l.Flush(updates)
+					conn.Close()
+					break
+				}
+			}
+		}()
+
 		for {
 			err := conn.WriteJSON(<-updates.Channel)
 			if err != nil {

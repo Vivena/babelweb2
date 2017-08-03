@@ -33,14 +33,13 @@ func connection(updates chan parser.BabelUpdate, node string) {
 
 	for {
 		log.Println("Trying", node)
-		exit := true
-		for exit {
+		for {
 			conn, err = net.Dial("tcp6", node)
 			if err != nil {
 				log.Println(err)
 				time.Sleep(time.Second * 5)
 			} else {
-				exit = false
+				break
 			}
 		}
 		log.Println("Connected to", node)
@@ -60,6 +59,7 @@ func connection(updates chan parser.BabelUpdate, node string) {
 		ws.LockDesc(desc.Id())
 		err = desc.Clean(updates)
 		ws.UnlockDesc(desc.Id())
+		ws.RemoveDesc(desc.Id())
 		if err != nil {
 			log.Println(err)
 			return
@@ -76,7 +76,8 @@ func main() {
 	var bwPort string
 
 	flag.Var(&nodes, "node",
-		"Babel node to connect to (default \"[::1]:33123\", may be repeated)")
+		"Babel node to connect to (default \"[::1]:33123\", " +
+			"may be repeated)")
 	flag.StringVar(&bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&staticRoot, "static", "./static/",
 		"directory with static files")
