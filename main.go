@@ -15,8 +15,8 @@ import (
 type nodeslice []string
 
 var nodes nodeslice
-var static_root string
-var ws_url string
+var staticRoot string
+var wsURL string
 
 func (i *nodeslice) String() string {
 	return fmt.Sprintf("%s", *i)
@@ -79,7 +79,7 @@ func connectionNode(updates chan parser.BabelUpdate, node string) {
 
 func serveConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "application/javascript")
-	fmt.Fprintf(w, "websocket_url = '%v'", ws_url)
+	fmt.Fprintf(w, "websocket_url = '%v'", wsURL)
 }
 
 func main() {
@@ -88,9 +88,9 @@ func main() {
 	flag.Var(&nodes, "node",
 		"Babel node to connect to (may be repeated multiple times)")
 	flag.StringVar(&bwPort, "http", ":8080", "web server address")
-	flag.StringVar(&static_root, "static", "./static/",
+	flag.StringVar(&staticRoot, "static", "./static/",
 		"directory with static files")
-	flag.StringVar(&ws_url, "ws", "ws://localhost:8080",
+	flag.StringVar(&wsURL, "ws", "ws://localhost:8080",
 		"location of the websocket")
 	flag.Parse()
 
@@ -103,7 +103,7 @@ func main() {
 
 	bcastGrp := ws.NewListenerGroup()
 	handler := ws.Handler(bcastGrp)
-	http.Handle("/", http.FileServer(http.Dir(static_root)))
+	http.Handle("/", http.FileServer(http.Dir(staticRoot)))
 	http.HandleFunc("/js/config.js", serveConfig)
 	http.Handle("/ws", handler)
 	err := http.ListenAndServe(bwPort, nil)
