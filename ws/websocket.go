@@ -37,6 +37,8 @@ func RemoveDesc(id parser.Id) {
 }
 
 func GetDesc(id parser.Id) *parser.BabelDesc {
+	nodes.Lock()
+	defer nodes.Unlock()
 	return nodes.nodes[id].desc
 }
 
