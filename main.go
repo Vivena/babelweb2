@@ -106,11 +106,9 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(staticRoot)))
 	http.HandleFunc("/js/config.js", serveConfig)
 	http.Handle("/ws", handler)
-	err := http.ListenAndServe(bwPort, nil)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	go func() {
+		log.Fatal(http.ListenAndServe(bwPort, nil))
+	}()
 
 	for {
 		update := <-updates
