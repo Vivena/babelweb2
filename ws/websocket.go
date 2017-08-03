@@ -67,7 +67,7 @@ func Handler(l *Listenergroup) http.Handler {
 		l.Push(updates)
 		defer l.Flush(updates)
 		for {
-			err := conn.WriteJSON(<-updates.Conduct)
+			err := conn.WriteJSON(<-updates.Channel)
 			if err != nil {
 				log.Println(err)
 			}

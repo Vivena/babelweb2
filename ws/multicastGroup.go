@@ -9,18 +9,14 @@ import (
 
 //Listener unique channel for each ws
 type Listener struct {
-	Conduct chan parser.SBabelUpdate
-}
-
-//Init create a Listener
-func (l *Listener) Init() *Listener {
-	l.Conduct = make(chan parser.SBabelUpdate)
-	return l
+	Channel chan parser.SBabelUpdate
 }
 
 //NewListener function to call if you want a new Listener
 func NewListener() *Listener {
-	return new(Listener).Init()
+	l := new(Listener)
+	l.Channel = make(chan parser.SBabelUpdate)
+	return l
 }
 
 //Listenergroup list of all the Listeners for the multicast
@@ -29,15 +25,11 @@ type Listenergroup struct {
 	listeners *list.List
 }
 
-//Init create a new Listenergroup
-func (g *Listenergroup) Init() *Listenergroup {
-	g.listeners = list.New()
-	return g
-}
-
 //NewListenerGroup function to call if you want a new Listenergroup
 func NewListenerGroup() *Listenergroup {
-	return new(Listenergroup).Init()
+	lg := new(Listenergroup)
+	lg.listeners = list.New()
+	return lg
 }
 
 //Push add a Listener to the Listenergroup

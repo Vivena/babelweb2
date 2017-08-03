@@ -119,7 +119,7 @@ func main() {
 		ws.UnlockDesc(update.Id())
 		t := update.ToSUpdate()
 		bcastGrp.Iter(func(l *ws.Listener) {
-			l.Conduct <- t
+			l.Channel <- t
 		})
 	}
 }
