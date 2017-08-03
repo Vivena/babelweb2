@@ -32,7 +32,7 @@ func connection(updates chan parser.BabelUpdate, node string) {
 	var err error
 
 	for {
-		log.Println("	Trying ", node)
+		log.Println("Trying", node)
 		exit := true
 		for exit {
 			conn, err = net.Dial("tcp6", node)
@@ -43,7 +43,7 @@ func connection(updates chan parser.BabelUpdate, node string) {
 				exit = false
 			}
 		}
-		log.Println("	Connected to", node)
+		log.Println("Connected to", node)
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
@@ -52,7 +52,7 @@ func connection(updates chan parser.BabelUpdate, node string) {
 		ws.AddDesc(desc)
 		err := desc.Listen(s, updates)
 		conn.Close()
-		log.Println("Connection closed")
+		log.Printf("Connection to %v closed\n", node)
 		if err != nil {
 			log.Println(err)
 			return
@@ -88,7 +88,6 @@ func main() {
 	}
 
 	ws.Init()
-	log.Println("	--------launching server--------")
 
 	updates := make(chan parser.BabelUpdate, 1024)
 	defer close(updates)
