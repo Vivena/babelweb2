@@ -63,6 +63,10 @@ function babelWebV2() {
     function convertJSON(event) {
 	var data = JSON.parse(event.data);
 
+        if(!'router' in data) {
+            throw "No router in update";
+        }
+
 	if(current === "unknown")
 	    current = data.router;
 
