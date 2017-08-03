@@ -8,25 +8,20 @@ import (
 	"sync"
 )
 
-type node struct {
-	sync.Mutex
-	desc *parser.BabelDesc
-}
-
 type nodelist struct {
 	sync.Mutex
-	nodes map[parser.Id]*node
+	nodes map[parser.Id]*parser.BabelDesc
 }
 
 var nodes nodelist
 
 func Init() {
-	nodes.nodes = make(map[parser.Id]*node)
+	nodes.nodes = make(map[parser.Id]*parser.BabelDesc)
 }
 
 func AddDesc(d *parser.BabelDesc) {
 	nodes.Lock()
-	nodes.nodes[d.Id()] = &node{desc: d}
+	nodes.nodes[d.Id()] = d
 	nodes.Unlock()
 }
 
@@ -39,15 +34,7 @@ func RemoveDesc(id parser.Id) {
 func GetDesc(id parser.Id) *parser.BabelDesc {
 	nodes.Lock()
 	defer nodes.Unlock()
-	return nodes.nodes[id].desc
-}
-
-func LockDesc(id parser.Id) {
-	nodes.nodes[id].Lock()
-}
-
-func UnlockDesc(id parser.Id) {
-	nodes.nodes[id].Unlock()
+	return nodes.nodes[id]
 }
 
 var upgrader = websocket.Upgrader{
