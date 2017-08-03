@@ -14,13 +14,22 @@ type node struct {
 }
 
 var nodes map[parser.Id]node
+var nodesMutex sync.Mutex
 
 func Init() {
 	nodes = make(map[parser.Id]node)
 }
 
 func AddDesc(d *parser.BabelDesc) {
+	nodesMutex.Lock()
 	nodes[d.Id()] = node{desc: d, m: new(sync.Mutex)}
+	nodesMutex.Unlock()
+}
+
+func RemoveDesc(id parser.Id) {
+	nodesMutex.Lock()
+	delete(nodes, id)
+	nodesMutex.Unlock()
 }
 
 func GetDesc(id parser.Id) *parser.BabelDesc {

@@ -59,6 +59,7 @@ func connection(updates chan parser.BabelUpdate, node string) {
 		ws.LockDesc(desc.Id())
 		err = desc.Clean(updates)
 		ws.UnlockDesc(desc.Id())
+		ws.RemoveDesc(desc.Id())
 		if err != nil {
 			log.Println(err)
 			return
