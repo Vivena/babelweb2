@@ -33,14 +33,13 @@ func connection(updates chan parser.BabelUpdate, node string) {
 
 	for {
 		log.Println("Trying", node)
-		exit := true
-		for exit {
+		for true {
 			conn, err = net.Dial("tcp6", node)
 			if err != nil {
 				log.Println(err)
 				time.Sleep(time.Second * 5)
 			} else {
-				exit = false
+				break
 			}
 		}
 		log.Println("Connected to", node)
