@@ -8,6 +8,7 @@ import (
 	"net"
 	"reflect"
 	"strconv"
+	"sync"
 )
 
 var errEOL = errors.New("EOL")
@@ -252,6 +253,7 @@ func (t Table) String() string {
 }
 
 type BabelDesc struct {
+	sync.RWMutex
 	id   Id
 	name Id
 	ts   map[Id](Table)

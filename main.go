@@ -107,13 +107,14 @@ func main() {
 	for {
 		update := <-updates
 		desc := ws.GetDesc(update.Id())
-		if !(desc.CheckUpdate(update)) {
-			continue
+		desc.Lock()
+		if desc.CheckUpdate(update) {
+			err := desc.Update(update)
+			if err != nil {
+				log.Println(err)
+			}
 		}
-		err := desc.Update(update)
-		if err != nil {
-			log.Println(err)
-		}
+		desc.Unlock()
 		t := update.ToSUpdate()
 		bcastGrp.Iter(func(l *ws.Listener) {
 			l.Channel <- t

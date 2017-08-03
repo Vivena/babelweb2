@@ -54,6 +54,7 @@ func Handler(l *Listenergroup) http.Handler {
 
 		nodes.Lock()
 		for _, node := range nodes.nodes {
+			node.RLock()
 			node.Iter(
 				func(bu parser.BabelUpdate) error {
 					sbu := bu.ToSUpdate()
@@ -63,6 +64,7 @@ func Handler(l *Listenergroup) http.Handler {
 					}
 					return err
 				})
+			node.RUnlock()
 		}
 		nodes.Unlock()
 		updates := NewListener()
