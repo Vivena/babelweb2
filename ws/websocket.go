@@ -65,9 +65,9 @@ func Handler(l *Listenergroup) http.Handler {
 			return
 		}
 
+		nodes.Lock()
 		for _, node := range nodes.nodes {
-			node.Lock()
-			node.desc.Iter(
+			node.Iter(
 				func(bu parser.BabelUpdate) error {
 					sbu := bu.ToSUpdate()
 					err := conn.WriteJSON(sbu)
@@ -76,8 +76,8 @@ func Handler(l *Listenergroup) http.Handler {
 					}
 					return err
 				})
-			node.Unlock()
 		}
+		nodes.Unlock()
 		updates := NewListener()
 		l.Push(updates)
 
