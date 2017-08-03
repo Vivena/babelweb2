@@ -7,8 +7,6 @@ import (
 	"sync"
 )
 
-var globalClose = make(chan struct{})
-
 //Listener unique channel for each ws
 type Listener struct {
 	Conduct chan parser.SBabelUpdate
