@@ -1,4 +1,3 @@
-
 function babelWebV2() {
     var babelDesc = {};
     var current = "unknown";
@@ -43,30 +42,22 @@ function babelWebV2() {
     };
 
     function connect(socketWarper) {
-	try {
-            socketWarper.socket = new WebSocket(websocket_url + "/ws")
-	    
-	    socketWarper.socket.onerror = function(error) {
-		console.error(error);
-	    };
+        socketWarper.socket = new WebSocket(websocket_url + "/ws")
 
-	    socketWarper.socket.onopen = function(event) {
-		d3.selectAll("body").select("#state")
-		    .text("Connected").style("background-color", "green");
-	    }
+	socketWarper.socket.onerror = console.error;
 
-	    socketWarper.socket.onclose = function(event) {
-		d3.selectAll("body").select("#state")
-		    .text("Disconnected").style("background-color", "red");
-	    }
-
-	    socketWarper.socket.onmessage = function(event) {
-		convertJSON(event);
-	    }
-	    redraw();
-	} catch (exception) {
-            console.error(exception);
+	socketWarper.socket.onopen = function(event) {
+	    d3.selectAll("body").select("#state")
+		.text("Connected").style("background-color", "green");
 	}
+
+	socketWarper.socket.onclose = function(event) {
+	    d3.selectAll("body").select("#state")
+		.text("Disconnected").style("background-color", "red");
+	}
+
+	socketWarper.socket.onmessage = convertJSON;
+	redraw();
     }
 
     function convertJSON(event) {
