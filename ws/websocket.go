@@ -59,18 +59,6 @@ func Handler(l *Listenergroup) http.Handler {
 			return
 		}
 
-		// Ignore any data received on the websocket and detect
-		// any errors.
-		go func() {
-			for {
-				_, _, err := conn.NextReader();
-				if err != nil {
-					conn.Close()
-					break
-				}
-			}
-		}()
-
 		for router := range nodes {
 			nodes[router].m.Lock()
 			nodes[router].desc.Iter(
@@ -86,7 +74,20 @@ func Handler(l *Listenergroup) http.Handler {
 		}
 		updates := NewListener()
 		l.Push(updates)
-		defer l.Flush(updates)
+
+		// Ignore any data received on the websocket and detect
+		// any errors.
+		go func() {
+			for {
+				_, _, err := conn.NextReader()
+				if err != nil {
+					l.Flush(updates)
+					conn.Close()
+					break
+				}
+			}
+		}()
+
 		for {
 			err := conn.WriteJSON(<-updates.Channel)
 			if err != nil {
