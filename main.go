@@ -56,7 +56,9 @@ func connection(updates chan parser.BabelUpdate, node string) {
 			log.Println(err)
 			return
 		}
+		ws.Lock()
 		err = desc.Clean(updates)
+		ws.Unlock()
 		ws.RemoveDesc(desc.Id())
 		if err != nil {
 			log.Println(err)
@@ -110,10 +112,12 @@ func main() {
 		if !(desc.CheckUpdate(update)) {
 			continue
 		}
+		ws.Lock()
 		err := desc.Update(update)
 		if err != nil {
 			log.Println(err)
 		}
+		ws.Unlock()
 		t := update.ToSUpdate()
 		bcastGrp.Iter(func(l *ws.Listener) {
 			l.Channel <- t
