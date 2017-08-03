@@ -49,7 +49,19 @@ func Handler(l *Listenergroup) http.Handler {
 			log.Println("Could not create the socket.", err)
 			return
 		}
-		log.Println("    Sending the database to the new client")
+
+		// Ignore any data received on the websocket and detect
+		// any errors.
+		go func() {
+			for {
+				_, _, err := conn.NextReader();
+				if err != nil {
+					conn.Close()
+					break
+				}
+			}
+		}()
+
 		for router := range nodes {
 			nodes[router].m.Lock()
 			nodes[router].desc.Iter(
