@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"container/list"
 	"flag"
 	"fmt"
 	"github.com/Vivena/babelweb2/parser"
@@ -16,7 +15,6 @@ import (
 type nodeslice []string
 
 var nodes nodeslice
-var Listconduct = list.New()
 var static_root string
 var ws_url string
 
