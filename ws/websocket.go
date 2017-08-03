@@ -13,16 +13,16 @@ type node struct {
 	desc *parser.BabelDesc
 }
 
-var nodes map[parser.Id]node
+var nodes map[parser.Id]*node
 var nodesMutex sync.Mutex
 
 func Init() {
-	nodes = make(map[parser.Id]node)
+	nodes = make(map[parser.Id]*node)
 }
 
 func AddDesc(d *parser.BabelDesc) {
 	nodesMutex.Lock()
-	nodes[d.Id()] = node{desc: d, m: new(sync.Mutex)}
+	nodes[d.Id()] = &node{desc: d, m: new(sync.Mutex)}
 	nodesMutex.Unlock()
 }
 
