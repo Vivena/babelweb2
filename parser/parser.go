@@ -236,12 +236,12 @@ func ParsePrefix(s *Scanner) (interface{}, error) {
 	return ip, nil
 }
 
-type Table struct {
+type table struct {
 	dict map[Id](Entry)
 	sync.Mutex
 }
 
-func (t Table) String() string {
+func (t table) String() string {
 	var s string
 	t.Lock()
 	for id, e := range t.dict {
@@ -255,7 +255,7 @@ func (t Table) String() string {
 type BabelDesc struct {
 	id   Id
 	name Id
-	ts   map[Id](Table)
+	ts   map[Id](table)
 }
 
 func (bd *BabelDesc) Id() Id {
@@ -272,15 +272,15 @@ func (bd *BabelDesc) String() string {
 }
 
 func NewBabelDesc() *BabelDesc {
-	ts := make(map[Id](Table))
-	ts["route"] = Table{dict: make(map[Id](Entry))}
-	ts["xroute"] = Table{dict: make(map[Id](Entry))}
-	ts["interface"] = Table{dict: make(map[Id](Entry))}
-	ts["neighbour"] = Table{dict: make(map[Id](Entry))}
+	ts := make(map[Id](table))
+	ts["route"] = table{dict: make(map[Id](Entry))}
+	ts["xroute"] = table{dict: make(map[Id](Entry))}
+	ts["interface"] = table{dict: make(map[Id](Entry))}
+	ts["neighbour"] = table{dict: make(map[Id](Entry))}
 	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
-func (t Table) Add(id Id, e Entry) error {
+func (t table) Add(id Id, e Entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -291,7 +291,7 @@ func (t Table) Add(id Id, e Entry) error {
 	return nil
 }
 
-func (t Table) Change(id Id, e Entry) error {
+func (t table) Change(id Id, e Entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -302,7 +302,7 @@ func (t Table) Change(id Id, e Entry) error {
 	return nil
 }
 
-func (t Table) Flush(id Id) error {
+func (t table) Flush(id Id) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
