@@ -343,6 +343,7 @@ func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 				action: "add", tableId: tk,
 				entryId: ek, entry: ev})
 			if err != nil {
+				tv.Unlock()
 				return err
 			}
 		}
