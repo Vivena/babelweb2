@@ -236,22 +236,19 @@ func ParsePrefix(s *Scanner) (interface{}, error) {
 	return ip, nil
 }
 
-type EntryMaker func() Entry
-
 type Table struct {
-	dict  map[Id](Entry)
-	dictM sync.Mutex
-	maker EntryMaker
+	dict map[Id](Entry)
+	sync.Mutex
 }
 
 func (t Table) String() string {
 	var s string
-	t.dictM.Lock()
+	t.Lock()
 	for id, e := range t.dict {
 		s += (fmt.Sprintf("%s:\n", id) +
 			fmt.Sprintln(e))
 	}
-	t.dictM.Unlock()
+	t.Unlock()
 	return s
 }
 
@@ -276,20 +273,16 @@ func (bd *BabelDesc) String() string {
 
 func NewBabelDesc() *BabelDesc {
 	ts := make(map[Id](Table))
-	ts["route"] = Table{dict: make(map[Id](Entry)),
-		maker: NewRouteEntry}
-	ts["xroute"] = Table{dict: make(map[Id](Entry)),
-		maker: NewXrouteEntry}
-	ts["interface"] = Table{dict: make(map[Id](Entry)),
-		maker: NewInterfaceEntry}
-	ts["neighbour"] = Table{dict: make(map[Id](Entry)),
-		maker: NewNeighbourEntry}
+	ts["route"] = Table{dict: make(map[Id](Entry))}
+	ts["xroute"] = Table{dict: make(map[Id](Entry))}
+	ts["interface"] = Table{dict: make(map[Id](Entry))}
+	ts["neighbour"] = Table{dict: make(map[Id](Entry))}
 	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
 func (t Table) Add(id Id, e Entry) error {
-	t.dictM.Lock()
-	defer t.dictM.Unlock()
+	t.Lock()
+	defer t.Unlock()
 	_, exists := t.dict[id]
 	if exists {
 		return FieldPresence
@@ -299,8 +292,8 @@ func (t Table) Add(id Id, e Entry) error {
 }
 
 func (t Table) Change(id Id, e Entry) error {
-	t.dictM.Lock()
-	defer t.dictM.Unlock()
+	t.Lock()
+	defer t.Unlock()
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -310,8 +303,8 @@ func (t Table) Change(id Id, e Entry) error {
 }
 
 func (t Table) Flush(id Id) error {
-	t.dictM.Lock()
-	defer t.dictM.Unlock()
+	t.Lock()
+	defer t.Unlock()
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -344,7 +337,7 @@ type SBabelUpdate struct {
 
 func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 	for tk, tv := range bd.ts {
-		tv.dictM.Lock()
+		tv.Lock()
 		for ek, ev := range tv.dict {
 			err := f(BabelUpdate{name: bd.name, router: bd.id,
 				action: "add", tableId: tk,
@@ -353,7 +346,7 @@ func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 				return err
 			}
 		}
-		tv.dictM.Unlock()
+		tv.Unlock()
 	}
 	return nil
 }
@@ -381,6 +374,20 @@ func (upd BabelUpdate) String() string {
 		upd.entryId, upd.entry)
 }
 
+func makeEntry(id Id) (Entry, error) {
+	switch id {
+	case "interface":
+		return NewInterfaceEntry(), nil
+	case "neighbour":
+		return NewNeighbourEntry(), nil
+	case "route":
+		return NewRouteEntry(), nil
+	case "xroute":
+		return NewXrouteEntry(), nil
+	}
+	return nil, errors.New("Unknown table Id")
+}
+
 func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
 	w, err := nextWord(s)
 	if err != nil {
@@ -397,7 +404,10 @@ func (bd *BabelDesc) ParseAction(s *Scanner) (BabelUpdate, error) {
 	if err != nil {
 		return emptyUpdate, err
 	}
-	new_entry := (bd.ts)[Id(table_id)].maker()
+	new_entry, err := makeEntry(Id(table_id))
+	if err != nil {
+		return emptyUpdate, err
+	}
 	err = new_entry.Parse(s)
 	if err != io.EOF && err != errEOL {
 		return emptyUpdate, err
@@ -426,8 +436,8 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 		return true
 	}
 	table := (bd.ts)[Id(upd.tableId)]
-	table.dictM.Lock()
-	defer table.dictM.Unlock()
+	table.Lock()
+	defer table.Unlock()
 	for key, value := range table.dict[Id(upd.entryId)] {
 		if !(reflect.DeepEqual((*upd.entry[key]).data, (*value).data)) {
 			return true
