@@ -241,7 +241,7 @@ type table struct {
 	sync.Mutex
 }
 
-func (t table) String() string {
+func (t *table) String() string {
 	var s string
 	t.Lock()
 	for id, e := range t.dict {
@@ -255,7 +255,7 @@ func (t table) String() string {
 type BabelDesc struct {
 	id   Id
 	name Id
-	ts   map[Id](table)
+	ts   map[Id](*table)
 }
 
 func (bd *BabelDesc) Id() Id {
@@ -272,15 +272,15 @@ func (bd *BabelDesc) String() string {
 }
 
 func NewBabelDesc() *BabelDesc {
-	ts := make(map[Id](table))
-	ts["route"] = table{dict: make(map[Id](Entry))}
-	ts["xroute"] = table{dict: make(map[Id](Entry))}
-	ts["interface"] = table{dict: make(map[Id](Entry))}
-	ts["neighbour"] = table{dict: make(map[Id](Entry))}
+	ts := make(map[Id](*table))
+	ts["route"] = &table{dict: make(map[Id](Entry))}
+	ts["xroute"] = &table{dict: make(map[Id](Entry))}
+	ts["interface"] = &table{dict: make(map[Id](Entry))}
+	ts["neighbour"] = &table{dict: make(map[Id](Entry))}
 	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
-func (t table) Add(id Id, e Entry) error {
+func (t *table) Add(id Id, e Entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -291,7 +291,7 @@ func (t table) Add(id Id, e Entry) error {
 	return nil
 }
 
-func (t table) Change(id Id, e Entry) error {
+func (t *table) Change(id Id, e Entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -302,7 +302,7 @@ func (t table) Change(id Id, e Entry) error {
 	return nil
 }
 
-func (t table) Flush(id Id) error {
+func (t *table) Flush(id Id) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
