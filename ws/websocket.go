@@ -19,14 +19,6 @@ func Init() {
 	nodes.nodes = make(map[parser.Id]*parser.BabelDesc)
 }
 
-func Lock() {
-	nodes.Lock()
-}
-
-func Unlock() {
-	nodes.Unlock()
-}
-
 func AddDesc(d *parser.BabelDesc) {
 	nodes.Lock()
 	nodes.nodes[d.Id()] = d

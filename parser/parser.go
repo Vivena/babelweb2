@@ -8,6 +8,7 @@ import (
 	"net"
 	"reflect"
 	"strconv"
+	"sync"
 )
 
 var errEOL = errors.New("EOL")
@@ -239,15 +240,18 @@ type EntryMaker func() Entry
 
 type Table struct {
 	dict  map[Id](Entry)
+	dictM sync.Mutex
 	maker EntryMaker
 }
 
 func (t Table) String() string {
 	var s string
+	t.dictM.Lock()
 	for id, e := range t.dict {
 		s += (fmt.Sprintf("%s:\n", id) +
 			fmt.Sprintln(e))
 	}
+	t.dictM.Unlock()
 	return s
 }
 
@@ -272,14 +276,20 @@ func (bd *BabelDesc) String() string {
 
 func NewBabelDesc() *BabelDesc {
 	ts := make(map[Id](Table))
-	ts["route"] = Table{make(map[Id](Entry)), NewRouteEntry}
-	ts["xroute"] = Table{make(map[Id](Entry)), NewXrouteEntry}
-	ts["interface"] = Table{make(map[Id](Entry)), NewInterfaceEntry}
-	ts["neighbour"] = Table{make(map[Id](Entry)), NewNeighbourEntry}
+	ts["route"] = Table{dict: make(map[Id](Entry)),
+		maker: NewRouteEntry}
+	ts["xroute"] = Table{dict: make(map[Id](Entry)),
+		maker: NewXrouteEntry}
+	ts["interface"] = Table{dict: make(map[Id](Entry)),
+		maker: NewInterfaceEntry}
+	ts["neighbour"] = Table{dict: make(map[Id](Entry)),
+		maker: NewNeighbourEntry}
 	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
 func (t Table) Add(id Id, e Entry) error {
+	t.dictM.Lock()
+	defer t.dictM.Unlock()
 	_, exists := t.dict[id]
 	if exists {
 		return FieldPresence
@@ -289,6 +299,8 @@ func (t Table) Add(id Id, e Entry) error {
 }
 
 func (t Table) Change(id Id, e Entry) error {
+	t.dictM.Lock()
+	defer t.dictM.Unlock()
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -298,6 +310,8 @@ func (t Table) Change(id Id, e Entry) error {
 }
 
 func (t Table) Flush(id Id) error {
+	t.dictM.Lock()
+	defer t.dictM.Unlock()
 	_, exists := t.dict[id]
 	if !exists {
 		return FieldAbsence
@@ -330,6 +344,7 @@ type SBabelUpdate struct {
 
 func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 	for tk, tv := range bd.ts {
+		tv.dictM.Lock()
 		for ek, ev := range tv.dict {
 			err := f(BabelUpdate{name: bd.name, router: bd.id,
 				action: "add", tableId: tk,
@@ -338,6 +353,7 @@ func (bd *BabelDesc) Iter(f func(BabelUpdate) error) error {
 				return err
 			}
 		}
+		tv.dictM.Unlock()
 	}
 	return nil
 }
@@ -409,7 +425,10 @@ func (bd *BabelDesc) CheckUpdate(upd BabelUpdate) bool {
 	if upd.action != Id("change") {
 		return true
 	}
-	for key, value := range (bd.ts)[Id(upd.tableId)].dict[Id(upd.entryId)] {
+	table := (bd.ts)[Id(upd.tableId)]
+	table.dictM.Lock()
+	defer table.dictM.Unlock()
+	for key, value := range table.dict[Id(upd.entryId)] {
 		if !(reflect.DeepEqual((*upd.entry[key]).data, (*value).data)) {
 			return true
 		}
