@@ -45,12 +45,11 @@ type EntryValue struct {
 type Entry map[Id](*EntryValue)
 
 func (e Entry) String() string {
-	var s string
+	b := new(bytes.Buffer)
 	for id, ev := range e {
-		s += (fmt.Sprintf("\t%s: ", id) +
-			fmt.Sprintln(ev.data))
+		fmt.Fprintf(b, "\t%s: %v\n", id, ev.data)
 	}
-	return s
+	return b.String()
 }
 
 type EntryError int
