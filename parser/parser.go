@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -242,14 +243,13 @@ type table struct {
 }
 
 func (t *table) String() string {
-	var s string
+	b := new(bytes.Buffer)
 	t.Lock()
+	defer t.Unlock()
 	for id, e := range t.dict {
-		s += (fmt.Sprintf("%s:\n", id) +
-			fmt.Sprintln(e))
+		fmt.Fprintf(b, "%s: %v\n", id, e)
 	}
-	t.Unlock()
-	return s
+	return b.String()
 }
 
 type BabelDesc struct {
