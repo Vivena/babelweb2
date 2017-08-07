@@ -262,12 +262,12 @@ func (bd *BabelDesc) Id() Id {
 }
 
 func (bd *BabelDesc) String() string {
-	var s string
+	b := new(bytes.Buffer)
 	for id, t := range bd.ts {
-		s += (fmt.Sprintf("*\t%s\n", id) +
-			fmt.Sprintln(t))
+		fmt.Fprintf(b, "*\t%s\n", id)
+		fmt.Fprintln(b, t)
 	}
-	return s
+	return b.String()
 }
 
 func NewBabelDesc() *BabelDesc {
