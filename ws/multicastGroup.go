@@ -2,8 +2,9 @@ package ws
 
 import (
 	"container/list"
-	"github.com/Vivena/babelweb2/parser"
 	"sync"
+
+	"github.com/Vivena/babelweb2/parser"
 )
 
 //Listener unique channel for each ws

@@ -1,11 +1,12 @@
 package ws
 
 import (
-	"github.com/Vivena/babelweb2/parser"
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"sync"
+
+	"github.com/Vivena/babelweb2/parser"
+	"github.com/gorilla/websocket"
 )
 
 type nodelist struct {
