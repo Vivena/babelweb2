@@ -4,19 +4,19 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/Vivena/babelweb2/parser"
-	"github.com/Vivena/babelweb2/ws"
 	"log"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/Vivena/babelweb2/parser"
+	"github.com/Vivena/babelweb2/ws"
 )
 
 type nodeslice []string
 
 var nodes nodeslice
 var staticRoot string
-var wsURL string
 
 func (i *nodeslice) String() string {
 	return fmt.Sprintf("%s", *i)
@@ -65,11 +65,6 @@ func connection(updates chan parser.BabelUpdate, node string) {
 	}
 }
 
-func serveConfig(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("content-type", "application/javascript")
-	fmt.Fprintf(w, "websocket_url = '%v'", wsURL)
-}
-
 func main() {
 	var bwPort string
 
@@ -79,8 +74,6 @@ func main() {
 	flag.StringVar(&bwPort, "http", ":8080", "web server address")
 	flag.StringVar(&staticRoot, "static", "./static/",
 		"directory with static files")
-	flag.StringVar(&wsURL, "ws", "ws://localhost:8080",
-		"location of the websocket")
 	flag.Parse()
 	if len(nodes) == 0 {
 		nodes = nodeslice{"[::1]:33123"}
@@ -98,7 +91,6 @@ func main() {
 	bcastGrp := ws.NewListenerGroup()
 	handler := ws.Handler(bcastGrp)
 	http.Handle("/", http.FileServer(http.Dir(staticRoot)))
-	http.HandleFunc("/js/config.js", serveConfig)
 	http.Handle("/ws", handler)
 	go func() {
 		log.Fatal(http.ListenAndServe(bwPort, nil))

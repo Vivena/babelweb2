@@ -42,7 +42,7 @@ function babelWebV2() {
     };
 
     function connect(socketWarper) {
-        socketWarper.socket = new WebSocket(websocket_url + "/ws")
+        socketWarper.socket = new WebSocket(`ws${location.protocol == 'https:' ? 's' : ''}://${location.host}/ws`)
 
 	socketWarper.socket.onerror = console.error;
 
@@ -155,7 +155,7 @@ function babelWebV2() {
 	    d3.select("#oto").attr("disabled", true);
 	else
 	    d3.select("#oto").attr("disabled", null);
-	
+
 	redraw();
     }
 
