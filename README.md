@@ -21,13 +21,7 @@ You may specify a list of Babel nodes to monitor:
     babelweb2 -node=[::1]:33123 -node=[2001:660:3301:9208::88]:33123
 
 The web interface is on port 8080 (type "http://localhost:8080" in your
-browser).  You may specify a different port with the "-http" flag.
-
-By default, the browser attempts to connect to a server on localhost.  In
-order to make Babelweb available over the Internet, you must specify your
-host's global address using the "-ws" flag:
-
-  babelweb2 -ws "ws://babelweb.example.com:8080"
+browser). You may specify a different port with the "-http" flag.
 
 From the routing daemon BabelWeb2 must obtain at least:
 - Announced metric
