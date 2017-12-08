@@ -550,7 +550,8 @@ func (bd *BabelDesc) Fill(s *Scanner) error {
 	return nil
 }
 
-func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
+func (bd *BabelDesc) Listen(s *Scanner, updChan chan SBabelUpdate) error {
+	defer bd.Clean(updChan)
 	for {
 		upd, err := bd.ParseAction(s)
 		if err != nil && err != io.EOF && err != errEOL {
@@ -560,16 +561,23 @@ func (bd *BabelDesc) Listen(s *Scanner, updChan chan BabelUpdate) error {
 			break
 		}
 		if upd.action != emptyUpdate.action {
-			updChan <- upd
+			if !(bd.CheckUpdate(upd)) {
+				continue
+			}
+			err = bd.Update(upd)
+			if err != nil {
+				return err
+			}
+			updChan <- upd.ToSUpdate()
 		}
 	}
 	return nil
 }
 
-func (bd *BabelDesc) Clean(updChan chan BabelUpdate) error {
+func (bd *BabelDesc) Clean(updChan chan SBabelUpdate) error {
 	return bd.Iter(func(u BabelUpdate) error {
 		u.action = "flush"
-		updChan <- u
+		updChan <- u.ToSUpdate()
 		return nil
 	})
 }

@@ -27,7 +27,7 @@ func (i *nodeslice) Set(value string) error {
 	return nil
 }
 
-func connection(updates chan parser.BabelUpdate, node string) {
+func connection(updates chan parser.SBabelUpdate, node string) {
 	var conn net.Conn
 	var err error
 
@@ -50,21 +50,13 @@ func connection(updates chan parser.BabelUpdate, node string) {
 		desc.Fill(s)
 		ws.AddDesc(desc)
 		err := desc.Listen(s, updates)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		ws.RemoveDesc(desc.Id())
 		conn.Close()
 		log.Printf("Connection to %v closed\n", node)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		err = desc.Clean(updates)
-		/* TODO:
-		   Call `ws.RemoveDesc(desc.Id())` at the appropriate time
-		   (clearly not here).
-		*/
-		if err != nil {
-			log.Println(err)
-			return
-		}
 	}
 }
 
@@ -84,7 +76,7 @@ func main() {
 
 	ws.Init()
 
-	updates := make(chan parser.BabelUpdate, 1024)
+	updates := make(chan parser.SBabelUpdate, 1024)
 	defer close(updates)
 
 	for i := 0; i < len(nodes); i++ {
@@ -100,18 +92,9 @@ func main() {
 	}()
 
 	for {
-		update := <-updates
-		desc := ws.GetDesc(update.Id())
-		if !(desc.CheckUpdate(update)) {
-			continue
-		}
-		err := desc.Update(update)
-		if err != nil {
-			log.Println(err)
-		}
-		t := update.ToSUpdate()
+		upd := <-updates
 		bcastGrp.Iter(func(l *ws.Listener) {
-			l.Channel <- t
+			l.Channel <- upd
 		})
 	}
 }
