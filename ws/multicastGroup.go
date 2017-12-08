@@ -61,6 +61,5 @@ func (g *Listenergroup) Iter(routine func(*Listener)) {
 	for i := g.listeners.Front(); i != nil; i = i.Next() {
 		l := i.Value.(*Listener)
 		routine(l)
-
 	}
 }
