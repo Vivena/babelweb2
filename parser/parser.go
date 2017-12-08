@@ -35,16 +35,16 @@ func nextWord(s *Scanner) (string, error) {
 
 type Id string
 
-type EntryParser func(*Scanner) (interface{}, error)
+type entryParser func(*Scanner) (interface{}, error)
 
-type EntryValue struct {
+type entryValue struct {
 	data   interface{}
-	parser EntryParser
+	parser entryParser
 }
 
-type Entry map[Id](*EntryValue)
+type entry map[Id](*entryValue)
 
-func (e Entry) String() string {
+func (e entry) String() string {
 	b := new(bytes.Buffer)
 	for id, ev := range e {
 		fmt.Fprintf(b, "\t%s: %v\n", id, ev.data)
@@ -52,14 +52,14 @@ func (e Entry) String() string {
 	return b.String()
 }
 
-type EntryError int
+type entryError int
 
 const (
-	FieldPresence EntryError = 0
-	FieldAbsence  EntryError = 1
+	FieldPresence entryError = 0
+	FieldAbsence  entryError = 1
 )
 
-func (e EntryError) Error() string {
+func (e entryError) Error() string {
 	if e == FieldPresence {
 		return "Field Already Exists"
 	} else if e == FieldAbsence {
@@ -68,22 +68,22 @@ func (e EntryError) Error() string {
 	return "Error of Lack of Error"
 }
 
-func NewEntry() Entry {
-	return make(map[Id](*EntryValue))
+func NewEntry() entry {
+	return make(map[Id](*entryValue))
 }
 
-func (e *Entry) AddField(id Id, parser EntryParser) error {
+func (e *entry) AddField(id Id, parser entryParser) error {
 	_, exists := (*e)[id]
 	if exists {
 		return FieldPresence
 	}
-	(*e)[id] = new(EntryValue)
+	(*e)[id] = new(entryValue)
 	(*e)[id].data = nil
 	(*e)[id].parser = parser
 	return nil
 }
 
-func (e *Entry) GetData(id Id) (interface{}, error) {
+func (e *entry) GetData(id Id) (interface{}, error) {
 	value, exists := (*e)[id]
 	if !exists {
 		return nil, FieldAbsence
@@ -91,7 +91,7 @@ func (e *Entry) GetData(id Id) (interface{}, error) {
 	return value.data, nil
 }
 
-func (e *Entry) Parse(s *Scanner) error {
+func (e *entry) Parse(s *Scanner) error {
 	for {
 		w, err := nextWord(s)
 		if err != nil {
@@ -117,7 +117,7 @@ func (e *Entry) Parse(s *Scanner) error {
 	return nil
 }
 
-func NewInterfaceEntry() Entry {
+func NewInterfaceEntry() entry {
 	i := NewEntry()
 	i.AddField("up", ParseBool)
 	i.AddField("ipv4", ParseIp)
@@ -125,7 +125,7 @@ func NewInterfaceEntry() Entry {
 	return i
 }
 
-func NewNeighbourEntry() Entry {
+func NewNeighbourEntry() entry {
 	i := NewEntry()
 	i.AddField("address", ParseIp)
 	i.AddField("if", ParseString)
@@ -138,7 +138,7 @@ func NewNeighbourEntry() Entry {
 	return i
 }
 
-func NewRouteEntry() Entry {
+func NewRouteEntry() entry {
 	i := NewEntry()
 	i.AddField("prefix", ParsePrefix)
 	i.AddField("from", ParsePrefix)
@@ -151,7 +151,7 @@ func NewRouteEntry() Entry {
 	return i
 }
 
-func NewXrouteEntry() Entry {
+func NewXrouteEntry() entry {
 	i := NewEntry()
 	i.AddField("prefix", ParsePrefix)
 	i.AddField("from", ParsePrefix)
@@ -181,7 +181,7 @@ func ParseBool(s *Scanner) (interface{}, error) {
 }
 
 // int64
-func GetIntParser(base int, bitSize int) EntryParser {
+func GetIntParser(base int, bitSize int) entryParser {
 	return func(s *Scanner) (interface{}, error) {
 		w, err := nextWord(s)
 		if err != nil {
@@ -196,7 +196,7 @@ func GetIntParser(base int, bitSize int) EntryParser {
 }
 
 // uint64
-func GetUintParser(base int, bitSize int) EntryParser {
+func GetUintParser(base int, bitSize int) entryParser {
 	return func(s *Scanner) (interface{}, error) {
 		w, err := nextWord(s)
 		if err != nil {
@@ -237,7 +237,7 @@ func ParsePrefix(s *Scanner) (interface{}, error) {
 }
 
 type table struct {
-	dict map[Id](Entry)
+	dict map[Id](entry)
 	sync.Mutex
 }
 
@@ -272,14 +272,14 @@ func (bd *BabelDesc) String() string {
 
 func NewBabelDesc() *BabelDesc {
 	ts := make(map[Id](*table))
-	ts["route"] = &table{dict: make(map[Id](Entry))}
-	ts["xroute"] = &table{dict: make(map[Id](Entry))}
-	ts["interface"] = &table{dict: make(map[Id](Entry))}
-	ts["neighbour"] = &table{dict: make(map[Id](Entry))}
+	ts["route"] = &table{dict: make(map[Id](entry))}
+	ts["xroute"] = &table{dict: make(map[Id](entry))}
+	ts["interface"] = &table{dict: make(map[Id](entry))}
+	ts["neighbour"] = &table{dict: make(map[Id](entry))}
 	return &BabelDesc{id: Id(""), name: Id(""), ts: ts}
 }
 
-func (t *table) Add(id Id, e Entry) error {
+func (t *table) Add(id Id, e entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -290,7 +290,7 @@ func (t *table) Add(id Id, e Entry) error {
 	return nil
 }
 
-func (t *table) Change(id Id, e Entry) error {
+func (t *table) Change(id Id, e entry) error {
 	t.Lock()
 	defer t.Unlock()
 	_, exists := t.dict[id]
@@ -318,7 +318,7 @@ type BabelUpdate struct {
 	action  Id
 	tableId Id
 	entryId Id
-	entry   Entry
+	entry   entry
 }
 
 func (u BabelUpdate) Id() Id {
@@ -374,7 +374,7 @@ func (upd BabelUpdate) String() string {
 		upd.entryId, upd.entry)
 }
 
-func makeEntry(id Id) (Entry, error) {
+func makeEntry(id Id) (entry, error) {
 	switch id {
 	case "interface":
 		return NewInterfaceEntry(), nil
