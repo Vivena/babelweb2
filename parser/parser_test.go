@@ -27,7 +27,7 @@ func TestListen(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		err = bd.Listen(s, updChan)
+		err = Listen(bd, s, updChan)
 		wg.Done()
 		close(updChan)
 	}()
@@ -214,4 +214,20 @@ func TestNextWord(t *testing.T) {
 				"(%v, %v)", e.word, e.err, word, err)
 		}
 	}
+}
+
+func Listen(bd *BabelDesc, s *Scanner, updChan chan BabelUpdate) error {
+	for {
+		upd, err := bd.ParseAction(s)
+		if err != nil && err != io.EOF && err != errEOL {
+			return err
+		}
+		if err == io.EOF {
+			break
+		}
+		if upd.action != emptyUpdate.action {
+			updChan <- upd
+		}
+	}
+	return nil
 }
