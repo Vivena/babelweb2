@@ -539,6 +539,8 @@ func (bd *BabelDesc) Fill(s *Scanner) error {
 		err := e.Parse(s)
 		if err != nil && err != io.EOF && err != errEOL {
 			return err
+		} else if e["BABEL"].data.(string) == "0.0" {
+			return errors.New("BABEL 0.0: Unsupported version")
 		}
 	}
 	bd.id = Id(e["my-id"].data.(string))
