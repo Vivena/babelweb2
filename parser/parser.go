@@ -12,8 +12,10 @@ import (
 	"sync"
 )
 
-var errEOL = errors.New("EOL")
-var ErrUnterminatedString = errors.New("Unterminated String")
+var (
+	errEOL                = errors.New("EOL")
+	ErrUnterminatedString = errors.New("Unterminated String")
+)
 
 type Scanner struct {
 	bufio.Scanner
