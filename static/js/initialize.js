@@ -42,7 +42,7 @@ function babelWebV2() {
     };
 
     function connect(socketWarper) {
-        socketWarper.socket = new WebSocket(`ws${location.protocol == 'https:' ? 's' : ''}://${location.host}/ws`)
+        socketWarper.socket = new WebSocket(`ws${location.protocol == 'https:' ? 's' : ''}://${location.href.replace(/http.*\:\/\//, '')}ws`)
 
 	    socketWarper.socket.onerror = console.error;
 
