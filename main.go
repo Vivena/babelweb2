@@ -48,7 +48,6 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 			conn.Close()
 			log.Printf("Connection to %v closed\n", node)
 		}
-		defer afterHours()
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
