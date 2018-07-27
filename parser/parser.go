@@ -539,11 +539,12 @@ func (bd *BabelDesc) Fill(s *Scanner) error {
 	e.AddField("my-id", ParseString)
 	for e["my-id"].data == nil {
 		err := e.Parse(s)
-		if err != nil && err != io.EOF && err != errEOL {
+		if err != nil && err != errEOL {
 			return err
-		} else if e["BABEL"].data.(string) == "0.0" {
-			return errors.New("BABEL 0.0: Unsupported version")
 		}
+	}
+	if e["BABEL"].data != nil && e["BABEL"].data.(string) == "0.0" {
+		return errors.New("BABEL 0.0: Unsupported version")
 	}
 	bd.id = Id(e["my-id"].data.(string))
 	if e["host"].data == nil {

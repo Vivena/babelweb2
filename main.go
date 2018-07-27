@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -43,20 +44,32 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 			}
 		}
 		log.Println("Connected to", node)
+		afterHours := func() {
+			conn.Close()
+			log.Printf("Connection to %v closed\n", node)
+		}
+		defer afterHours()
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
 		desc := parser.NewBabelDesc()
-		desc.Fill(s)
-		ws.AddDesc(desc)
-		err := desc.Listen(s, updates)
-		if err != nil {
-			log.Println(err)
+		err = desc.Fill(s)
+		if err == io.EOF {
+			log.Printf("Something wrong with %v:\n\tcouldn't get router id.\n", node)
+		} else if err != nil {
+			// Don't you even dare to reconnect to this unholy node!
+			log.Printf("Oh, boy! %v is doomed:\n\t%v.\t", node, err)
+			afterHours()
 			return
+		} else {
+			ws.AddDesc(desc)
+			err = desc.Listen(s, updates)
+			if err != nil {
+				log.Printf("Error while listening %v:\n\t%v.\n", node, err)
+			}
+			ws.RemoveDesc(desc.Id())
 		}
-		ws.RemoveDesc(desc.Id())
-		conn.Close()
-		log.Printf("Connection to %v closed\n", node)
+		afterHours()
 	}
 }
 
