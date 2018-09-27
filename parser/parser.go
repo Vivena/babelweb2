@@ -539,7 +539,8 @@ func (bd *BabelDesc) Fill(s *Scanner) error {
 	e.AddField("my-id", ParseString)
 	for e["my-id"].data == nil {
 		err := e.Parse(s)
-		if err != nil && err != errEOL {
+		if err != nil && err != errEOL &&
+			(err != io.EOF || e["my-id"].data == nil) {
 			return err
 		}
 	}
