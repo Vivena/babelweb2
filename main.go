@@ -100,6 +100,7 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(staticRoot)))
 	http.Handle("/ws", handler)
 	go func() {
+		log.Printf("Listening on http://localhost%v\n", bwPort)
 		log.Fatal(http.ListenAndServe(bwPort, nil))
 	}()
 
