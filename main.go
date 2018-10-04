@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Vivena/babelweb2/parser"
@@ -93,6 +94,15 @@ func main() {
 
 	for i := 0; i < len(nodes); i++ {
 		go connection(updates, nodes[i])
+	}
+
+	_, err := os.Stat(staticRoot)
+	if err != nil && os.IsNotExist(err) {
+		log.Fatalf("'%v': No such directory\n%v\n%v.\n", staticRoot,
+			"Try your best to find the directory containing the static files",
+			"and precise it via the -static option")
+	} else if err != nil {
+		log.Fatalf("Something went terribly wrong: %v\n", err)
 	}
 
 	bcastGrp := ws.NewListenerGroup()
