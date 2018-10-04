@@ -2,157 +2,144 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Babelweb</title>
-    <link rel="stylesheet" type="text/css" href="./css/style.css">
+    <title>BabelWeb</title>
+    <link rel="stylesheet" type="text/css" href="/css/style.css">
     <link rel="shortcut icon" href="babel-favicon.png"/>
   </head>
 
   <body>
-    <figure style="float:right; padding: 0 20px 20px 0;">
+    <h1><a href="https://github.com/Vivena/babelweb2">BabelWeb</a></h1>
+
+    <figure id="logo">
       <a href="https://www.irif.fr/~jch/software/babel/">
-	<img alt="Babel" src="Babel_logo.svg" width="150" height="150">
+        <img alt="Babel" src="Babel_logo.svg" width="150" height="150">
       </a>
     </figure>
-    <h1>BabelWeb</h1>
-    <h2 name="routers_h">Routers</h2>
 
-    <div id="fig">
-      <p class="legend">
-        <span class="legend-title">Legend</span>
-        <span class="legend-current">Current</span>
-        <span class="legend-neighbour">Neighbours</span>
-        <span class="legend-other">Others</span>
-      </p>
+    <div>
+      <div id="routers">
+        <h2>Routers</h2>
+        <div id="fig"></div>
+        <div class="legend">
+          <p class="legend-title">Legend</p>
+          <ul>
+            <li><span class="legend-current"></span>Current</li>
+            <li><span class="legend-neighbours"></span>Neighbours</li>
+            <li><span class="legend-others"></span>Others</li>
+          </ul>
+        </div>
+      </div>
+
+      <div id="configuration">
+        <h3>Configuration</h3>
+        <p>
+          <label for="nodes">Current node:</label>
+          <select id="nodes"
+                  onChange="babelweb.updateCurrent(this.options[this.selectedIndex].value);">
+            <option value="unknown" selected>none</option>
+          </select>
+          <br>
+          <input type="checkbox" id="show_all" checked onClick="babelweb.redraw();" >
+          <label for="show_all">Show uninstalled routes</label>
+          <br>
+          <input type="button" id="oto" value="1:1" disabled="disabled" onClick="babelweb.oneToOne();" >
+          <input type="button" id="zin" value="Zoom in" onClick="babelweb.zoomIn(1.2);" >
+          <input type="button" id="zout" value="Zoom out" onClick="babelweb.zoomOut(1.2);" >
+        </p>
+        <p>State: <span id="state" class="bad">disconnected</span>.</p>
+      </div>
     </div>
 
-    <h3>Configuration</h3>
-    <p>
-      <label for="nodes">Current node:</label>
-      <select id="nodes"
-              onChange="babelweb.updateCurrent(this.options[this.selectedIndex].value);">
-        <option value="unknown" selected>none</option>
-      </select>
-      <br>
-      <input type="checkbox" id="show_all" checked onClick="babelweb.redraw();" >
-      <label for="show_all">Show uninstalled routes</label>
-      <br>
-      <input type="button" id="oto" value="1:1" disabled="disabled" onClick="babelweb.oneToOne();" >
-      <input type="button" id="zin" value="Zoom in" onClick="babelweb.zoomIn(1.2);" >
-      <input type="button" id="zout" value="Zoom out" onClick="babelweb.zoomOut(1.2);" >
-    </p>
-    <p>
-      State: <span id="state" class="bad">disconnected</span>.
-    </p>
-    <h2>Neighbours</h2>
-    <table id="neighbour" frame="border" rules="all">
-      <thead>
-        <tr>
-          <th>address</th>
-          <th>if</th>
-          <th>reach</th>
-          <th>rxcost</th>
-          <th>txcost</th>
-          <th>cost</th>
-          <th>rtt</th>
-
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="loading">
-          <td id = "loading" colspan="0" align = "center">loading</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p class="legend">
-      <span class="legend-title">Legend</span>
-      <span class="legend-wiredLink">Wired link (96)</span>
-      <span class="legend-losslessWireless">Lossless wireless link (256)</span>
-      <span class="legend-unreachableNeighbour">Unreachable (65535)</span>
-      <br>
-      (based on <tt>rxcost</tt>; colors are interpolated logarithmically)
-    </p>
-
-    <h2>Routes</h2>
-    <table id="route" frame="border" rules="all">
-      <thead>
-        <tr>
-          <th>prefix</th>
-          <th>metric</th>
-          <th>refmetric</th>
-          <th>id</th>
-          <th>via</th>
-          <th>if</th>
-          <th>installed</th>
-
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="loading">
-          <td id = "loading" colspan="0" align = "center">loading</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p class="legend">
-      <span class="legend-title">Legend</span>
-      <span class="legend-installed">Installed</span>
-      <span class="legend-uninstalled">Not installed</span>
-      <span class="legend-unreachable">Unreachable (<tt>metric</tt> 65535)</span>
-    </p>
-
-    <h2>Redistributed routes</h2>
-    <table id="xroute" frame="border" rules="all">
-      <thead>
-        <tr>
-          <th>prefix</th>
-          <th>metric</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr class="loading">
-          <td id = "loading" colspan="0" align = "center">loading</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <h2>How to get BabelWeb?</h2>
-    <h5>Go tool</h5>
-    <pre>  go get github.com/Vivena/babelweb2<br>  go install github.com/Vivena/babelweb2</pre>
-    <h5>Git</h5>
-    <pre>  git clone <a href="https://github.com/Vivena/babelweb2.git">github.com/Vivena/babelweb2.git</a></pre>
     <br>
-    <hr>
-    <div id="credits">
-      <p>BabelWeb2 was written by Belynda Hamaz, Edward Guyot and Fedor Ryabinin<br>
-	based on Gabriel Kerneis's
-	<a href="https://github.com/kerneis/babelweb"
-	   title="Babelweb git">BabelWeb</a>.
-      </p>
-      <p>
-	Special thanks to Antonin, Zeinab, Gwendoline and Boris for sharing the office.<br>
-	Not less special thanks to Athénaïs for being somewhere around.
-      </p>
-      <p>
-	Authors wishes to express their most sincere gratitude to
-	<a href="https://www.irif.fr/~jch/">Juliusz Chroboczek</a>,<br>
-	neither uncle nor cousin but most decidedly teacher and friend.
-      </p>
+    <div id="neighbours">
+      <h2>Neighbours</h2>
+      <table id="neighbour">
+        <thead>
+          <tr>
+            <th>address</th>
+            <th>if</th>
+            <th>reach</th>
+            <th>rxcost</th>
+            <th>txcost</th>
+            <th>cost</th>
+            <th>rtt</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="loading">
+            <td colspan="7">loading</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="legend">
+        <p class="legend-title">Legend</p>
+        <ul>
+          <li><span class="legend-wired-link"></span>Wired link (96)</li>
+          <li><span class="legend-lossless-wireless"></span>Lossless wireless link (256)</li>
+          <li><span class="legend-unreachable-neighbour"></span>Unreachable (65535)</li>
+        </ul>
+        <p class="legend-note">(based on <var>rxcost</var>; colors are interpolated logarithmically)</p>
+      </div>
     </div>
-    <p id="test"></p>
 
-    <script src="./js/d3/d3.min.js"></script>
-    <script src="./js/initialize.js"></script>
-    <script type="text/javascript">
+    <div id="routes">
+      <h2>Routes</h2>
+      <table id="route">
+        <thead>
+          <tr>
+            <th>prefix</th>
+            <th>metric</th>
+            <th>refmetric</th>
+            <th>id</th>
+            <th>via</th>
+            <th>if</th>
+            <th>installed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="loading">
+            <td colspan="7">loading</td>
+          </tr>
+        </tbody>
+      </table>
 
+      <div class="legend">
+        <p class="legend-title">Legend</p>
+        <ul>
+          <li><span class="legend-installed"></span>Installed</li>
+          <li><span class="legend-uninstalled"></span>Not installed</li>
+          <li><span class="legend-unreachable"></span>Unreachable (<var>metric</var> 65535)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="xroutes">
+      <h2>Redistributed routes</h2>
+      <table id="xroute">
+        <thead>
+          <tr>
+            <th>prefix</th>
+            <th>metric</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="loading">
+            <td colspan="2">loading</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script src="/js/d3/d3.min.js"></script>
+    <script src="/js/initialize.js"></script>
+    <script>
       var socketWarper = {socket: null}
       var babelweb  = babelWebV2();
       window.onload = function() {
-      babelweb.initLegend();
-      babelweb.initGraph();
-      babelweb.connect(socketWarper);
+          babelweb.initGraph();
+          babelweb.connect(socketWarper);
       }
-
     </script>
   </body>
 </html>

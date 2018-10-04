@@ -12,7 +12,7 @@ Launch Babel on your local host:
 
     babeld -g 33123 ...
 
-By default, Babwelweb attempts to connect to a Babel node at [::1]:33123:
+By default, Babwelweb attempts to connect to a Babel node at `[::1]:33123`:
 
     babelweb2
 
@@ -21,7 +21,7 @@ You may specify a list of Babel nodes to monitor:
     babelweb2 -node=[::1]:33123 -node=[2001:660:3301:9208::88]:33123
 
 The web interface is on port 8080 (type "http://localhost:8080" in your
-browser). You may specify a different port with the "-http" flag.
+browser). You may specify a different port with the `-http` flag.
 
 From the routing daemon BabelWeb2 must obtain at least:
 - Announced metric
@@ -31,3 +31,9 @@ From the routing daemon BabelWeb2 must obtain at least:
 
 BabelWeb2 was written by Belynda Hamaz, Edward Guyot and Fedor Ryabinin
 based on Gabriel Kerneis's [BabelWeb](https://github.com/kerneis/babelweb).
+
+Special thanks to Antonin, Zeinab, Gwendoline and Boris for sharing
+the office. Not less special thanks to Athénaïs for being somewhere
+around. Authors wishes to express their most sincere gratitude to
+[Juliusz Chroboczek](https://www.irif.fr/~jch/), neither uncle nor
+cousin but most decidedly teacher and friend.
