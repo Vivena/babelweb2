@@ -1,20 +1,20 @@
 function babelWebV2() {
-    var babelDesc = {};
-    var current = "unknown";
+    let babelDesc = {};
+    let current = "unknown";
 
-    var routers = {};
-    var nodes = [];
-    var links = [];
-    var metrics = [];
+    let routers = {};
+    let nodes = [];
+    let links = [];
+    let metrics = [];
 
-    var addrToRouterId;
+    let addrToRouterId;
 
-    var initEnd = false;
-    var lostUpdate = false;
+    let initEnd = false;
+    let lostUpdate = false;
 
-    var svg, color, width, height, simulation, vis, koef = 1;
+    let svg, color, width, height, simulation, vis, koef = 1;
 
-    var palette = {
+    const palette = {
         "gray": "#777",
         "lightGray": "#ddd",
         "blue": "#03f",
@@ -27,7 +27,7 @@ function babelWebV2() {
         "red": "#f30"
     };
 
-    var colors = {
+    const colors = {
         installed: palette.green,
         uninstalled: palette.lightGreen,
         unreachable: palette.lightGray,
@@ -61,7 +61,7 @@ function babelWebV2() {
     }
 
     function convertJSON(event) {
-        var data = JSON.parse(event.data);
+        let data = JSON.parse(event.data);
 
         if (!'router' in data) {
             throw "No router in update";
@@ -86,7 +86,7 @@ function babelWebV2() {
         if (data.action === "flush")
             delete babelDesc[data.router][data.table][data.id];
         else {
-            for (var key in data.data) {
+            for (let key in data.data) {
                 babelDesc[data.router][data.table][data.id][key] =
                     data.data[key];
             }
@@ -108,7 +108,7 @@ function babelWebV2() {
     }
 
     function updateSwitch() {
-        var options = d3.select("#nodes").selectAll("option")
+        let options = d3.select("#nodes").selectAll("option")
             .data(d3.keys(babelDesc), function(d) {
                 return d;
             });
@@ -128,8 +128,8 @@ function babelWebV2() {
                     .localeCompare(babelDesc[y].self.name);
         });
 
-        var sel = document.getElementById("nodes");
-        for (var i, j = 0; i = sel.options[j]; j++) {
+        let sel = document.getElementById("nodes");
+        for (let i, j = 0; i = sel.options[j]; j++) {
             if (i.value == current) {
                 sel.selectedIndex = j;
                 break;
@@ -214,7 +214,7 @@ function babelWebV2() {
         }
 
         function first(array, f) {
-            var i = 0,
+            let i = 0,
                 n = array.length,
                 a = array[0],
                 b;
@@ -227,23 +227,23 @@ function babelWebV2() {
         }
 
         function insertKey(arr, obj) {
-            for (var i = 0; i < arr.length; i++) {
+            for (let i = 0; i < arr.length; i++) {
                 if (arr[i].key == obj.key) return arr;
             }
             arr.push(obj);
             return arr;
         }
 
-        for (var r in routers) {
+        for (let r in routers) {
             routers[r].metric = undefined;
         }
         routers[current].metric = 0;
 
-        var neighToRouterMetric = {};
-        for (var route in babelDesc[current].route) {
-            var r = babelDesc[current].route[route];
-            var metric = r.metric;
-            var refmetric = r.refmetric;
+        let neighToRouterMetric = {};
+        for (let route in babelDesc[current].route) {
+            let r = babelDesc[current].route[route];
+            let metric = r.metric;
+            let refmetric = r.refmetric;
 
             if (!routers[r.id]) {
                 routers[r.id] = {
@@ -271,7 +271,7 @@ function babelWebV2() {
         }
 
         addrToRouterId = {};
-        for (var n in neighToRouterMetric) {
+        for (let n in neighToRouterMetric) {
             addrToRouterId[n] =
                 first(d3.entries(neighToRouterMetric[n]),
                     function(a, b) {
@@ -281,7 +281,7 @@ function babelWebV2() {
 
         nodes = [];
         metrics = [];
-        for (var r in routers) {
+        for (let r in routers) {
             if (routers[r].metric == undefined)
                 delete routers[r];
             else {
@@ -293,8 +293,8 @@ function babelWebV2() {
                 });
             }
         }
-        for (var n in neighToRouterMetric)
-            for (var id in neighToRouterMetric[n])
+        for (let n in neighToRouterMetric)
+            for (let id in neighToRouterMetric[n])
                 metrics.push({
                     source: routers[addrToRouterId[n]],
                     target: routers[id],
@@ -302,8 +302,8 @@ function babelWebV2() {
                 });
 
         links = [];
-        for (var r_key in babelDesc[current].route) {
-            var r = babelDesc[current].route[r_key];
+        for (let r_key in babelDesc[current].route) {
+            let r = babelDesc[current].route[r_key];
             if (r.metric == 65535)
                 continue;
 
@@ -320,7 +320,7 @@ function babelWebV2() {
 
     function redraw() {
         function isNeighbour(id) {
-            for (var n in babelDesc[current].neighbour)
+            for (let n in babelDesc[current].neighbour)
                 if (addrToRouterId[babelDesc[current].neighbour[n].address] ==
                     id)
                     return true;
@@ -344,7 +344,7 @@ function babelWebV2() {
                 return d.metric * koef;
             });
 
-        var node = vis.selectAll("circle.node")
+        let node = vis.selectAll("circle.node")
             .data(nodes);
         node.enter().append("svg:circle")
             .attr("class", "node")
@@ -374,11 +374,11 @@ function babelWebV2() {
             });
 
         function nodeName(id) {
-            var name = (babelDesc[id] && babelDesc[id].self.name) || "unknown";
+            let name = (babelDesc[id] && babelDesc[id].self.name) || "unknown";
             return name;
         }
 
-        var route_path = d3.line()
+        let route_path = d3.line()
             .x(function(d) {
                 if (typeof d == 'undefined') return null;
                 else return d.x;
@@ -389,7 +389,7 @@ function babelWebV2() {
             })
             .curve();
 
-        var link = vis.selectAll("path.route")
+        let link = vis.selectAll("path.route")
             .data(links);
         link.enter().insert("svg:path", "circle.node")
             .attr("class", "route")
@@ -413,7 +413,7 @@ function babelWebV2() {
             .attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
 
-        var route_path = d3.line()
+        let route_path = d3.line()
             .x(function(d) {
                 if (typeof d == 'undefined') return null;
                 else return d.x;
@@ -424,7 +424,7 @@ function babelWebV2() {
             })
             .curve(d3.curveLinear);
 
-        var show_all = d3.select("#show_all").property("checked");
+        let show_all = d3.select("#show_all").property("checked");
         vis.selectAll("path.route")
             .attr("display", function(d) {
                 return (d.installed && d.metric != 65535) || show_all ?
@@ -468,10 +468,10 @@ function babelWebV2() {
     }
 
     function normalizeId(s) {
-        var allowedChars = "0123456789abcdef";
-        var res = "";
-        for (var i = 0; i < s.length; i++) {
-            var c = s.charAt(i);
+        let allowedChars = "0123456789abcdef";
+        let res = "";
+        for (let i = 0; i < s.length; i++) {
+            let c = s.charAt(i);
             if (allowedChars.indexOf(c) != -1)
                 res += c;
         }
@@ -479,9 +479,9 @@ function babelWebV2() {
     }
 
     function updateRow(d, name, headers) {
-        var tr = d3.select(this);
+        let tr = d3.select(this);
 
-        var costColor = d3.scaleLog()
+        let costColor = d3.scaleLog()
             .domain([0, 96, 256, 65535])
             .range([colors.wiredLink,
                 colors.wiredLink,
@@ -498,7 +498,7 @@ function babelWebV2() {
         else if (name == "neighbour")
             tr.style("background-color", costColor(d.value.rxcost));
 
-        var row = tr.selectAll("td")
+        let row = tr.selectAll("td")
             .data(headers.map(function(h) {
                 if (h == "reach") {
                     s = d.value[h].toString(16);
@@ -513,13 +513,13 @@ function babelWebV2() {
     }
 
     function updateTable(name) {
-        var table = d3.select("#" + name);
+        let table = d3.select("#" + name);
         table.select("tr.loading").remove();
-        var headers = [];
+        let headers = [];
         table.selectAll("th").each(function() {
             headers.push(d3.select(this).text());
         });
-        var rows = table.select("tbody").selectAll("tr")
+        let rows = table.select("tbody").selectAll("tr")
             .data(d3.entries(babelDesc[current][name]), function(d) {
                 if (typeof d == 'undefined') return null;
                 else return d.key;
