@@ -42,19 +42,19 @@ function babelWebV2() {
     };
 
     function connect(socketWarper) {
-        socketWarper.socket = new WebSocket(`ws${location.protocol == 'https:' ? 's' : ''}://${location.href.replace(/http.*\:\/\//, '')}ws`)
+        socketWarper.socket = new WebSocket(`ws${location.protocol == 'https:' ? 's' : ''}://${location.href.replace(/http.*\:\/\//, '')}ws`);
 
         socketWarper.socket.onerror = console.error;
 
         socketWarper.socket.onopen = function(event) {
             d3.selectAll("body").select("#state")
                 .text("Connected").style("background-color", "green");
-        }
+        };
 
         socketWarper.socket.onclose = function(event) {
             d3.selectAll("body").select("#state")
                 .text("Disconnected").style("background-color", "red");
-        }
+        };
 
         socketWarper.socket.onmessage = convertJSON;
         redraw();
