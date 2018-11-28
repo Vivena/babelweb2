@@ -98,10 +98,10 @@ function babelWebV2() {
     }
 
     function isEmpty() {
-        for (t in babelDesc[current]) {
+        for (let t in babelDesc[current]) {
             if (t == "self")
                 continue;
-            for (i in babelDesc[current][t])
+            for (let i in babelDesc[current][t])
                 return metrics.length <= 1;
         }
         return true;
@@ -501,7 +501,7 @@ function babelWebV2() {
         let row = tr.selectAll("td")
             .data(headers.map(function(h) {
                 if (h == "reach") {
-                    s = d.value[h].toString(16);
+                    let s = d.value[h].toString(16);
                     for (; s.length < 4;)
                         s = "0" + s;
                     return s;
