@@ -129,9 +129,9 @@ function babelWebV2() {
         });
 
         let sel = document.getElementById("nodes");
-        for (let i, j = 0; i = sel.options[j]; j++) {
-            if (i.value == current) {
-                sel.selectedIndex = j;
+        for (let i = 0;; i++) {
+            if (sel.options[i].value == current) {
+                sel.selectedIndex = i;
                 break;
             }
         }
