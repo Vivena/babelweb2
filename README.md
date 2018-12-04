@@ -1,5 +1,5 @@
 # BabelWeb2
-Yet Another Monitoring Tool for the Babel Routing Daemon.
+Yet Another Monitoring Tool for the [Babel routing daemon][babeld].
 
 ## Installation
 
@@ -12,7 +12,7 @@ Launch Babel on your local host:
 
     babeld -g 33123 ...
 
-By default, Babwelweb attempts to connect to a Babel node at `[::1]:33123`:
+By default, BabelWeb2 attempts to connect to a Babel node at `[::1]:33123`:
 
     babelweb2
 
@@ -30,10 +30,14 @@ From the routing daemon BabelWeb2 must obtain at least:
 - Router-id
 
 BabelWeb2 was written by Belynda Hamaz, Edward Guyot and Fedor Ryabinin
-based on Gabriel Kerneis's [BabelWeb](https://github.com/kerneis/babelweb).
+based on Gabriel Kerneis’s [BabelWeb][babelweb].
 
-Special thanks to Antonin, Zeinab, Gwendoline and Boris for sharing
-the office. Not less special thanks to Athénaïs for being somewhere
-around. Authors wishes to express their most sincere gratitude to
-[Juliusz Chroboczek](https://www.irif.fr/~jch/), neither uncle nor
-cousin but most decidedly teacher and friend.
+Special thanks to Antonin, Zeinab, Gwendoline and Boris for sharing the
+office. Not less special thanks to Athénaïs for being somewhere around.
+Authors wish to express their most sincere gratitude to [Juliusz
+Chroboczek][jch], neither uncle nor cousin but most decidedly teacher and
+friend.
+
+[babeld]: https://github.com/jech/babeld
+[babelweb]: https://github.com/kerneis/babelweb
+[jch]: https://www.irif.fr/~jch/
