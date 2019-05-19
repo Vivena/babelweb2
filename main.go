@@ -45,11 +45,10 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 			}
 		}
 		log.Println("Connected to", node)
-		closeConn := func() {
+		afterHours := func() {
 			conn.Close()
 			log.Printf("Connection to %v closed\n", node)
 		}
-		defer closeConn()
 		fmt.Fprintf(conn, "monitor\n")
 		r := bufio.NewReader(conn)
 		s := parser.NewScanner(r)
@@ -60,6 +59,7 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 		} else if err != nil {
 			// Don't you even dare to reconnect to this unholy node!
 			log.Printf("Oh, boy! %v is doomed:\n\t%v.\t", node, err)
+			afterHours()
 			return
 		} else {
 			ws.AddDesc(desc)
@@ -69,7 +69,7 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 			}
 			ws.RemoveDesc(desc.Id())
 		}
-		closeConn()
+		afterHours()
 	}
 }
 
