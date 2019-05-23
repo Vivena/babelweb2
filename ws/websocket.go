@@ -5,70 +5,63 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/Vivena/babelweb2/parser"
+	"github.com/Vivena/babelweb2/state"
 	"github.com/gorilla/websocket"
 )
 
-type nodelist struct {
+type NodeList struct {
 	sync.Mutex
-	nodes map[parser.Id]*parser.BabelDesc
+	nodes    map[*state.BabelState]struct{}
+	upgrader websocket.Upgrader
 }
 
-var nodes nodelist
-
-func Init() {
-	nodes.nodes = make(map[parser.Id]*parser.BabelDesc)
+func NewNodeList() *NodeList {
+	return &NodeList{
+		nodes: make(map[*state.BabelState]struct{}),
+		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+	}
 }
 
-func AddDesc(d *parser.BabelDesc) {
-	nodes.Lock()
-	nodes.nodes[d.Id()] = d
-	nodes.Unlock()
+func (nl *NodeList) Add(s *state.BabelState) {
+	nl.Lock()
+	defer nl.Unlock()
+
+	nl.nodes[s] = struct{}{}
 }
 
-func RemoveDesc(id parser.Id) {
-	nodes.Lock()
-	delete(nodes.nodes, id)
-	nodes.Unlock()
+func (nl *NodeList) Remove(s *state.BabelState) {
+	nl.Lock()
+	defer nl.Unlock()
+
+	delete(nl.nodes, s)
 }
 
-func GetDesc(id parser.Id) *parser.BabelDesc {
-	nodes.Lock()
-	defer nodes.Unlock()
-	return nodes.nodes[id]
-}
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
-//Handler manage the websockets
-func Handler(l *Listenergroup) http.Handler {
+func (nl *NodeList) Handler(l *Listenergroup) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		log.Println("New connection to a websocket")
-		conn, err := upgrader.Upgrade(w, r, nil)
+		conn, err := nl.upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("Could not create the socket.", err)
 			return
 		}
 
-		nodes.Lock()
-		for _, node := range nodes.nodes {
-			node.Iter(
-				func(bu parser.BabelUpdate) error {
-					sbu := bu.ToSUpdate()
-					err := conn.WriteJSON(sbu)
-					if err != nil {
-						log.Println(err)
-					}
-					return err
-				})
+		nl.Lock()
+		for babel, _ := range nl.nodes {
+			err := babel.Iter(func(t state.Transition) error {
+				return conn.WriteJSON(t)
+			})
+			if err != nil {
+				log.Println(err)
+			}
 		}
-		nodes.Unlock()
+		nl.Unlock()
+
 		updates := NewListener()
 		l.Push(updates)
 
