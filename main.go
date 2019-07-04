@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/Vivena/babelweb2/parser"
 	"github.com/Vivena/babelweb2/state"
 	"github.com/Vivena/babelweb2/ws"
 )
@@ -28,7 +29,7 @@ func (i *nodeslice) Set(value string) error {
 	return nil
 }
 
-func connection(updates chan state.Transition, node string,
+func connection(updates chan parser.Transition, node string,
 	nl *ws.NodeList, delay time.Duration) {
 	var conn net.Conn
 	var err error
@@ -99,7 +100,7 @@ func main() {
 	}
 
 	nl := ws.NewNodeList()
-	updates := make(chan state.Transition, 1024)
+	updates := make(chan parser.Transition, 1024)
 	defer close(updates)
 
 	for i := 0; i < len(nodes); i++ {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/Vivena/babelweb2/parser"
 	"github.com/Vivena/babelweb2/state"
 	"github.com/gorilla/websocket"
 )
@@ -53,7 +54,7 @@ func (nl *NodeList) Handler(l *Listenergroup) http.Handler {
 
 		nl.Lock()
 		for babel, _ := range nl.nodes {
-			err := babel.Iter(func(t state.Transition) error {
+			err := babel.Iter(func(t parser.Transition) error {
 				return conn.WriteJSON(t)
 			})
 			if err != nil {

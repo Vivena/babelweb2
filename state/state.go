@@ -8,8 +8,6 @@ import (
 	"github.com/Vivena/babelweb2/parser"
 )
 
-type Transition parser.Transition
-
 type TransitionKey struct {
 	table string
 	field string
@@ -17,7 +15,7 @@ type TransitionKey struct {
 
 type TransitionSet struct {
 	sync.Mutex
-	ts map[TransitionKey]*Transition
+	ts map[TransitionKey]*parser.Transition
 }
 
 type BabelState struct {
@@ -31,11 +29,11 @@ const DEFAULT_SET_SIZE = 100
 
 func newTransitonSet() *TransitionSet {
 	return &TransitionSet{
-		ts: make(map[TransitionKey]*Transition, DEFAULT_SET_SIZE),
+		ts: make(map[TransitionKey]*parser.Transition, DEFAULT_SET_SIZE),
 	}
 }
 
-func (set *TransitionSet) add(t *Transition) {
+func (set *TransitionSet) add(t *parser.Transition) {
 	if t == nil {
 		return
 	}
@@ -70,7 +68,11 @@ func NewBabelState(reader io.Reader, delay time.Duration) (*BabelState, error) {
 	return state, err
 }
 
-func (b *BabelState) Iter(f func(t Transition) error) error {
+func (b *BabelState) Version() string {
+	return b.parser.Version
+}
+
+func (b *BabelState) Iter(f func(t parser.Transition) error) error {
 	b.history.Lock()
 	defer b.history.Unlock()
 
@@ -84,9 +86,9 @@ func (b *BabelState) Iter(f func(t Transition) error) error {
 	return nil
 }
 
-func (b *BabelState) Listen(updates chan Transition) error {
+func (b *BabelState) Listen(updates chan parser.Transition) error {
 	defer func() {
-		ts := make(map[*Transition]struct{}, len(b.history.ts))
+		ts := make(map[*parser.Transition]struct{}, len(b.history.ts))
 
 		b.history.Lock()
 		for _, t := range b.history.ts {
@@ -95,7 +97,7 @@ func (b *BabelState) Listen(updates chan Transition) error {
 		}
 		b.history.Unlock()
 
-		for t, _ := range ts {
+		for t := range ts {
 			b.history.add(t)
 			b.news.add(t)
 			updates <- *t
@@ -112,7 +114,7 @@ func (b *BabelState) Listen(updates chan Transition) error {
 				for _, t := range b.news.ts {
 					updates <- *t
 				}
-				b.news.ts = make(map[TransitionKey]*Transition,
+				b.news.ts = make(map[TransitionKey]*parser.Transition,
 					DEFAULT_SET_SIZE)
 				b.news.Unlock()
 			}
@@ -129,7 +131,7 @@ func (b *BabelState) Listen(updates chan Transition) error {
 			continue
 		}
 
-		st := Transition(*t)
+		st := parser.Transition(*t)
 
 		b.history.add(&st)
 		if b.delay != time.Duration(0) {

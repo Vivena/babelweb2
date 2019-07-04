@@ -4,11 +4,11 @@ import (
 	"container/list"
 	"sync"
 
-	"github.com/Vivena/babelweb2/state"
+	"github.com/Vivena/babelweb2/parser"
 )
 
 type Listener struct {
-	Channel chan state.Transition
+	Channel chan parser.Transition
 }
 
 type Listenergroup struct {
@@ -18,7 +18,7 @@ type Listenergroup struct {
 
 func NewListener() *Listener {
 	l := new(Listener)
-	l.Channel = make(chan state.Transition)
+	l.Channel = make(chan parser.Transition)
 	return l
 }
 
