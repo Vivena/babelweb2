@@ -11,28 +11,28 @@ import (
 
 type nodelist struct {
 	sync.Mutex
-	nodes map[parser.Id]*parser.BabelDesc
+	nodes map[string]*parser.BabelDesc
 }
 
 var nodes nodelist
 
 func Init() {
-	nodes.nodes = make(map[parser.Id]*parser.BabelDesc)
+	nodes.nodes = make(map[string]*parser.BabelDesc)
 }
 
 func AddDesc(d *parser.BabelDesc) {
 	nodes.Lock()
-	nodes.nodes[d.Id()] = d
+	nodes.nodes[d.ID] = d
 	nodes.Unlock()
 }
 
-func RemoveDesc(id parser.Id) {
+func RemoveDesc(id string) {
 	nodes.Lock()
 	delete(nodes.nodes, id)
 	nodes.Unlock()
 }
 
-func GetDesc(id parser.Id) *parser.BabelDesc {
+func GetDesc(id string) *parser.BabelDesc {
 	nodes.Lock()
 	defer nodes.Unlock()
 	return nodes.nodes[id]

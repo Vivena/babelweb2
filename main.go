@@ -67,7 +67,7 @@ func connection(updates chan parser.SBabelUpdate, node string) {
 			if err != nil {
 				log.Printf("Error while listening %v:\n\t%v.\n", node, err)
 			}
-			ws.RemoveDesc(desc.Id())
+			ws.RemoveDesc(desc.ID)
 		}
 		afterHours()
 	}
